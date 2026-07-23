@@ -1,0 +1,2 @@
+# Railway root-level requirements (references backend package)
+-r backend/requirements.txt
