@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentiment Meter — Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><span>S</span>entiment <span>M</span>eter</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="app.html">Analyze</a>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Auth section -->
+  <div id="auth-section" style="text-align:center; padding:3rem 1rem;">
+    <h1>Dashboard</h1>
+    <p style="color:var(--text2); margin:1rem 0;">Enter your email to get started — you'll receive 3 free scans and your API key.</p>
+    <div class="search-box" style="max-width:400px;">
+      <input type="email" id="email-input" placeholder="your@email.com" style="text-align:center;">
+      <button onclick="signup()">Get API Key</button>
+    </div>
+    <p id="auth-error" style="color:var(--red); margin-top:0.5rem; display:none;"></p>
+    <div id="api-key-section" style="display:none; margin-top:1.5rem;">
+      <p style="color:var(--text2); margin-bottom:0.5rem;">Your API key — save this to use in <code style="color:var(--accent2);">X-API-Key</code> header:</p>
+      <div class="api-key-box">
+        <span id="api-key-display"></span>
+        <button class="copy-btn" onclick="copyApiKey()">Copy</button>
+      </div>
+      <p style="color:var(--text2); font-size:0.85rem; margin-top:0.5rem;">🔑 Also saved to your browser for this site.</p>
+    </div>
+  </div>
+
+  <!-- Dashboard content (shown after auth) -->
+  <div id="dashboard-content" style="display:none;">
+    <div class="credits-display" id="credits-section">
+      <div>
+        <span class="big-num" id="credits-count">—</span>
+        <div class="info">credits remaining</div>
+      </div>
+      <div>
+        <span class="big-num" id="scans-count" style="font-size:2rem;">—</span>
+        <div class="info">total scans performed</div>
+      </div>
+    </div>
+
+    <h2 style="margin-bottom:1rem;">Buy Credits</h2>
+    <div class="pricing-grid" style="max-width: 750px;">
+      <div class="plan-card">
+        <h3>Starter</h3>
+        <div class="price">$5</div>
+        <div class="desc">10 scans</div>
+        <button class="btn" style="border:none; cursor:pointer;" onclick="checkout('starter')">Buy Now</button>
+      </div>
+      <div class="plan-card featured">
+        <h3>Pro</h3>
+        <div class="price">$20</div>
+        <div class="desc">50 scans</div>
+        <button class="btn" style="border:none; cursor:pointer;" onclick="checkout('pro')">Buy Now</button>
+      </div>
+      <div class="plan-card">
+        <h3>Unlimited</h3>
+        <div class="price">$50/mo</div>
+        <div class="desc">Unlimited scans</div>
+        <button class="btn" style="border:none; cursor:pointer;" onclick="checkout('unlimited')">Buy Now</button>
+      </div>
+    </div>
+
+    <h2 style="margin:2rem 0 1rem;">Scan History</h2>
+    <div id="history-section">
+      <p style="color:var(--text2);">No scans yet.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>Sentiment Meter — Powered by AI</p>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = 'http://localhost:8000';
+
+// On load, check if API key stored
+window.onload = function() {
+  const key = localStorage.getItem('sm_api_key');
+  if (key) showDashboard(key);
+  
+  // Check for checkout success
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('success') === 'true') {
+    showToast('✅ Credits purchased! Reloading...', 'success');
+    setTimeout(() => {
+      const key = localStorage.getItem('sm_api_key');
+      if (key) showDashboard(key);
+      window.history.replaceState({}, '', window.location.pathname);
+    }, 1500);
+  }
+  if (params.get('canceled') === 'true') {
+    showToast('Purchase canceled.', 'error');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+};
+
+async function signup() {
+  const email = document.getElementById('email-input').value.trim();
+  const err = document.getElementById('auth-error');
+  if (!email || !email.includes('@')) {
+    err.textContent = 'Please enter a valid email address.';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  
+  try {
+    const r = await fetch(API_BASE + '/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await r.json();
+    if (data.api_key) {
+      localStorage.setItem('sm_api_key', data.api_key);
+      document.getElementById('api-key-display').textContent = data.api_key;
+      document.getElementById('api-key-section').style.display = 'block';
+      document.getElementById('auth-section').querySelector('.search-box').style.display = 'none';
+      document.getElementById('auth-section').querySelector('p:first-of-type').textContent = '✅ 3 free credits activated!';
+      showToast('🎉 Welcome! 3 free credits loaded.', 'success');
+      showDashboard(data.api_key);
+    } else {
+      err.textContent = data.error || 'Signup failed.';
+      err.style.display = 'block';
+    }
+  } catch(e) {
+    err.textContent = 'Connection error. Is the backend running?';
+    err.style.display = 'block';
+  }
+}
+
+async function showDashboard(key) {
+  document.getElementById('auth-section').innerHTML = '<h1>Dashboard</h1>';
+  document.getElementById('dashboard-content').style.display = 'block';
+  
+  // Load credits
+  try {
+    const r = await fetch(API_BASE + '/credits', {
+      headers: { 'X-API-Key': key }
+    });
+    const data = await r.json();
+    document.getElementById('credits-count').textContent = data.credits;
+    document.getElementById('scans-count').textContent = data.total_scans;
+  } catch(e) {}
+  
+  // Load history
+  try {
+    const r = await fetch(API_BASE + '/history', {
+      headers: { 'X-API-Key': key }
+    });
+    const data = await r.json();
+    const histDiv = document.getElementById('history-section');
+    if (data.history && data.history.length > 0) {
+      let html = `<table class="history-table">
+        <tr><th>Person</th><th>Sentiment</th><th>Score</th><th>Articles</th><th>Date</th></tr>`;
+      data.history.forEach(h => {
+        const c = h.sentiment_label && h.sentiment_label.includes('Positive') ? '#00b894' :
+                  h.sentiment_label && h.sentiment_label.includes('Negative') ? '#d63031' : '#fdcb6e';
+        html += `<tr>
+          <td><strong>${h.person_name}</strong></td>
+          <td style="color:${c};">${h.sentiment_label || '—'}</td>
+          <td>${h.avg_compound ? (h.avg_compound >= 0 ? '+' : '') + h.avg_compound.toFixed(2) : '—'}</td>
+          <td>${h.articles_analyzed || '—'}</td>
+          <td style="color:var(--text2);">${h.created_at ? new Date(h.created_at * 1000).toLocaleDateString() : '—'}</td>
+        </tr>`;
+      });
+      html += '</table>';
+      histDiv.innerHTML = html;
+    }
+  } catch(e) {}
+}
+
+async function checkout(planId) {
+  const email = prompt('Enter your email for the purchase:');
+  if (!email) return;
+  try {
+    const r = await fetch(API_BASE + '/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, plan_id: planId, origin_url: window.location.origin })
+    });
+    const data = await r.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      showToast('Error: ' + (data.error || 'Checkout failed'), 'error');
+    }
+  } catch(e) {
+    showToast('Connection error', 'error');
+  }
+}
+
+function copyApiKey() {
+  const key = document.getElementById('api-key-display').textContent;
+  navigator.clipboard.writeText(key).then(() => {
+    showToast('✅ API key copied!', 'success');
+  });
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentiment Meter — AI Sentiment Analysis</title>
+  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="AI-powered sentiment & emotion analysis for any public figure. Pay per scan.">
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><span>S</span>entiment <span>M</span>eter</a>
+  <div class="nav-links">
+    <a href="app.html">Try Demo</a>
+    <a href="#pricing">Pricing</a>
+    <a href="dashboard.html" class="btn">Dashboard</a>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Hero -->
+  <section class="hero">
+    <h1>What's the <span>vibe</span> on anyone?</h1>
+    <p>Type a name — get instant AI-powered sentiment and emotion analysis from the latest news. Used by journalists, traders, and curious minds.</p>
+    <div class="search-box">
+      <input type="text" id="hero-search" placeholder="e.g. Elon Musk, Taylor Swift, Joe Biden..." onkeypress="if(event.key==='Enter') goAnalyze()">
+      <button onclick="goAnalyze()">Analyze →</button>
+    </div>
+    <div class="demo-note">
+      🔍 <strong>Free demo</strong> — no account needed. 3 free scans when you sign up.
+    </div>
+  </section>
+
+  <!-- Live Demo -->
+  <div id="hero-results"></div>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <h2>Simple Pricing</h2>
+    <p>Pay as you go. No monthly commitment unless you want it.</p>
+    <div class="pricing-grid">
+      <div class="plan-card">
+        <h3>Starter</h3>
+        <div class="price">$5</div>
+        <div class="desc">10 scans — perfect to try it out</div>
+        <a href="dashboard.html" class="btn">Get Started</a>
+      </div>
+      <div class="plan-card featured">
+        <h3>Pro</h3>
+        <div class="price">$20</div>
+        <div class="desc">50 scans — for regular use</div>
+        <a href="dashboard.html" class="btn">Get Started</a>
+      </div>
+      <div class="plan-card">
+        <h3>Unlimited</h3>
+        <div class="price">$50/mo</div>
+        <div class="desc">Unlimited scans — for power users</div>
+        <a href="dashboard.html" class="btn">Get Started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section style="padding: 3rem 0;">
+    <h2 style="text-align:center; margin-bottom: 2rem;">How It Works</h2>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+      <div style="text-align:center; background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
+        <div style="font-size:2rem; margin-bottom:0.5rem;">🔍</div>
+        <h3>1. Search</h3>
+        <p style="color:var(--text2); font-size:0.9rem;">Type any name — politician, celebrity, CEO, anyone in the news.</p>
+      </div>
+      <div style="text-align:center; background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
+        <div style="font-size:2rem; margin-bottom:0.5rem;">🤖</div>
+        <h3>2. Analyze</h3>
+        <p style="color:var(--text2); font-size:0.9rem;">AI scans 100+ news articles, measures polarity and detects 8 emotions.</p>
+      </div>
+      <div style="text-align:center; background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
+        <div style="font-size:2rem; margin-bottom:0.5rem;">📊</div>
+        <h3>3. Read the Room</h3>
+        <p style="color:var(--text2); font-size:0.9rem;">Get a visual report with sentiment score, emotion profile, and headlines.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <p>Sentiment Meter — Powered by AI · <a href="https://github.com/kasperwtrcolor/sentiment-meter" style="color:var(--accent2);">GitHub</a></p>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = 'http://localhost:8000';
+
+function goAnalyze() {
+  const name = document.getElementById('hero-search').value.trim();
+  if (!name) return;
+  const resultsDiv = document.getElementById('hero-results');
+  resultsDiv.innerHTML = '<div style="text-align:center; padding:2rem;"><div class="spinner"></div><p style="color:var(--text2); margin-top:1rem;">Scanning 100+ articles...</p></div>';
+  
+  fetch(API_BASE + '/analyze/demo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ person: name })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Error: ${data.error}</p></div>`; return; }
+    resultsDiv.innerHTML = renderResults(data);
+  })
+  .catch(err => {
+    resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Could not reach server. Is the backend running?</p><p style="color:var(--text2); font-size:0.85rem; margin-top:0.5rem;">${err.message}</p></div>`;
+  });
+}
+
+function renderResults(data) {
+  const s = data.summary;
+  const label = s.sentiment_label;
+  const cls = label.includes('Positive') ? '🟢' : label.includes('Negative') ? '🔴' : '🟡';
+  const color = label.includes('Positive') ? '#00b894' : label.includes('Negative') ? '#d63031' : '#fdcb6e';
+  const barPct = ((s.avg_compound + 1) / 2 * 100).toFixed(1);
+  
+  let emotionsHtml = '';
+  if (s.top_emotions && Object.keys(s.top_emotions).length > 0) {
+    const emojis = {joy:'😊', anger:'😡', sadness:'😢', fear:'😨', surprise:'😲', trust:'🤝', anticipation:'🔮', disgust:'🤢'};
+    const maxEmo = Math.max(...Object.values(s.top_emotions));
+    emotionsHtml = '<div class="emotions"><h3>🧠 Emotion Profile</h3>';
+    for (const [emo, score] of Object.entries(s.top_emotions)) {
+      const pct = maxEmo > 0 ? (score / maxEmo * 100).toFixed(0) : 0;
+      emotionsHtml += `
+        <div class="emotion-row">
+          <span class="emoji">${emojis[emo] || '❓'}</span>
+          <span class="name">${emo.charAt(0).toUpperCase() + emo.slice(1)}</span>
+          <div class="bar"><div class="bar-inner" style="width:${pct}%"></div></div>
+          <span class="pct">${score}%</span>
+        </div>`;
+    }
+    emotionsHtml += '</div>';
+  }
+
+  let headlinesHtml = '';
+  if (data.results && data.results.length > 0) {
+    headlinesHtml = '<div class="headlines"><h3>📰 Top Headlines</h3>';
+    const sorted = [...data.results].sort((a,b) => Math.abs(b.compound) - Math.abs(a.compound));
+    sorted.forEach(r => {
+      const c = r.compound >= 0.05 ? '🟢' : r.compound <= -0.05 ? '🔴' : '🟡';
+      const cc = r.compound >= 0.05 ? '#00b894' : r.compound <= -0.05 ? '#d63031' : '#fdcb6e';
+      headlinesHtml += `
+        <div class="headline-item">
+          <span style="color:${cc}; font-weight:700;">${c} ${r.compound >= 0 ? '+' : ''}${r.compound.toFixed(2)}</span>
+          <span class="source">${r.source}</span>
+          <div class="text">${r.text.substring(0, 150)}${r.text.length > 150 ? '...' : ''}</div>
+        </div>`;
+    });
+    headlinesHtml += '</div>';
+  }
+
+  return `
+    <div class="sentiment-card">
+      <div class="sentiment-header">
+        <h2>${data.person}</h2>
+        <span class="sentiment-badge" style="background:${color}22; color:${color};">${cls}</span>
+      </div>
+      <div class="sentiment-bar">
+        <span style="color:var(--red); font-size:0.8rem;">Negative</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${barPct}%; background: ${color};"></div>
+        </div>
+        <span style="color:var(--green); font-size:0.8rem;">Positive</span>
+        <span class="bar-value">${s.avg_compound >= 0 ? '+' : ''}${s.avg_compound.toFixed(2)}</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card positive"><span class="num">${s.pct_positive}%</span><span class="label">Positive</span></div>
+        <div class="stat-card neutral"><span class="num">${s.pct_neutral}%</span><span class="label">Neutral</span></div>
+        <div class="stat-card negative"><span class="num">${s.pct_negative}%</span><span class="label">Negative</span></div>
+      </div>
+      ${sourcesHtml(s)}
+      ${emotionsHtml}
+      ${headlinesHtml}
+      <div style="margin-top:1rem; font-size:0.8rem; color:var(--text2);">
+        📡 ${s.total} articles · Sign up for full results &amp; history
+        <a href="dashboard.html" style="color:var(--accent2); margin-left:0.5rem;">Get API Key →</a>
+      </div>
+    </div>`;
+}
+
+function sourcesHtml(s) {
+  if (!s.sources) return '';
+  const entries = Object.entries(s.sources).slice(0, 5);
+  return `<div style="margin:0.5rem 0; font-size:0.8rem; color:var(--text2);">📡 Sources: ${entries.map(([src, cnt]) => `${src} (${cnt})`).join(' · ')}</div>`;
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

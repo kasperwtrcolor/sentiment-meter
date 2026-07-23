@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentiment Meter — Analyze</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><span>S</span>entiment <span>M</span>eter</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="dashboard.html" class="btn">Dashboard</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div style="text-align:center; padding:2rem 0;">
+    <h1>Analyze Sentiment</h1>
+    <p style="color:var(--text2); margin-top:0.5rem;">Type a name and get instant AI-powered analysis</p>
+  </div>
+
+  <div class="search-box">
+    <input type="text" id="search" placeholder="e.g. Elon Musk, Taylor Swift, Donald Trump..." onkeypress="if(event.key==='Enter') runAnalysis()">
+    <button id="analyze-btn" onclick="runAnalysis()">Analyze →</button>
+  </div>
+
+  <div id="results" style="margin-top:2rem;"></div>
+</div>
+
+<footer>
+  <p>Sentiment Meter — Powered by AI</p>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = 'http://localhost:8000';
+let apiKey = localStorage.getItem('sm_api_key');
+
+async function runAnalysis() {
+  const name = document.getElementById('search').value.trim();
+  if (!name) return;
+  const btn = document.getElementById('analyze-btn');
+  const resultsDiv = document.getElementById('results');
+  
+  if (apiKey) {
+    // Authenticated
+    resultsDiv.innerHTML = '<div style="text-align:center; padding:2rem;"><div class="spinner"></div><p style="color:var(--text2); margin-top:1rem;">Scanning 100+ articles...</p></div>';
+    btn.disabled = true;
+    try {
+      const r = await fetch(API_BASE + '/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+        body: JSON.stringify({ person: name })
+      });
+      const data = await r.json();
+      if (r.status === 402) {
+        resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red); font-size:1.2rem;">⚠️ Out of credits</p><p style="color:var(--text2);">You have ${data.credits} credits. <a href="dashboard.html" style="color:var(--accent2);">Buy more →</a></p></div>`;
+        return;
+      }
+      if (data.error) { resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Error: ${data.error}</p></div>`; return; }
+      resultsDiv.innerHTML = renderResults(data, data.credits_remaining);
+    } catch(err) {
+      resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Connection error. Is the backend running?</p></div>`;
+    } finally { btn.disabled = false; }
+  } else {
+    // Demo
+    resultsDiv.innerHTML = '<div style="text-align:center; padding:2rem;"><div class="spinner"></div><p style="color:var(--text2); margin-top:1rem;">Scanning (demo mode — 3 headlines only)...</p></div>';
+    btn.disabled = true;
+    try {
+      const r = await fetch(API_BASE + '/analyze/demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ person: name })
+      });
+      const data = await r.json();
+      if (data.error) { resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Error: ${data.error}</p></div>`; return; }
+      resultsDiv.innerHTML = renderResults(data);
+    } catch(err) {
+      resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Connection error. <a href="dashboard.html" style="color:var(--accent2);">Get an API key →</a></p></div>`;
+    } finally { btn.disabled = false; }
+  }
+}
+
+function renderResults(data, creditsLeft) {
+  const s = data.summary;
+  const label = s.sentiment_label;
+  const color = label.includes('Positive') ? '#00b894' : label.includes('Negative') ? '#d63031' : '#fdcb6e';
+  const barPct = ((s.avg_compound + 1) / 2 * 100).toFixed(1);
+  
+  let emotionsHtml = '';
+  if (s.top_emotions && Object.keys(s.top_emotions).length > 0) {
+    const emojis = {joy:'😊', anger:'😡', sadness:'😢', fear:'😨', surprise:'😲', trust:'🤝', anticipation:'🔮', disgust:'🤢'};
+    const maxEmo = Math.max(...Object.values(s.top_emotions));
+    emotionsHtml = '<div class="emotions"><h3>🧠 Emotion Profile</h3>';
+    for (const [emo, score] of Object.entries(s.top_emotions)) {
+      const pct = maxEmo > 0 ? (score / maxEmo * 100).toFixed(0) : 0;
+      emotionsHtml += `
+        <div class="emotion-row">
+          <span class="emoji">${emojis[emo] || '❓'}</span>
+          <span class="name">${emo.charAt(0).toUpperCase() + emo.slice(1)}</span>
+          <div class="bar"><div class="bar-inner" style="width:${pct}%"></div></div>
+          <span class="pct">${score}%</span>
+        </div>`;
+    }
+    emotionsHtml += '</div>';
+  }
+
+  let headlinesHtml = '<div class="headlines"><h3>📰 Headlines Analyzed</h3>';
+  if (data.results && data.results.length > 0) {
+    const sorted = [...data.results].sort((a,b) => Math.abs(b.compound) - Math.abs(a.compound));
+    sorted.forEach(r => {
+      const c = r.compound >= 0.05 ? '🟢' : r.compound <= -0.05 ? '🔴' : '🟡';
+      const cc = r.compound >= 0.05 ? '#00b894' : r.compound <= -0.05 ? '#d63031' : '#fdcb6e';
+      let emotions = '';
+      if (r.emotions && Object.keys(r.emotions).length > 0) {
+        const top3 = Object.entries(r.emotions).sort((a,b) => b[1]-a[1]).slice(0,3);
+        emotions = `<div style="font-size:0.8rem; color:var(--text2);">↳ ${top3.map(([e,s]) => `${e} ${s}%`).join(' · ')}</div>`;
+      }
+      headlinesHtml += `
+        <div class="headline-item">
+          <span style="color:${cc}; font-weight:700;">${c} ${r.compound >= 0 ? '+' : ''}${r.compound.toFixed(2)}</span>
+          <span class="source">${r.source}</span>
+          <div class="text">${r.text.substring(0, 180)}${r.text.length > 180 ? '...' : ''}</div>
+          ${emotions}
+        </div>`;
+    });
+  }
+  headlinesHtml += '</div>';
+
+  let sourcesHtml = '';
+  if (s.sources) {
+    const entries = Object.entries(s.sources).slice(0, 5);
+    sourcesHtml = `<div style="margin:0.5rem 0; font-size:0.8rem; color:var(--text2);">📡 ${entries.map(([src, cnt]) => `${src} (${cnt})`).join(' · ')}</div>`;
+  }
+
+  let creditNote = '';
+  if (creditsLeft !== undefined) {
+    creditNote = `<div style="margin-top:1rem; font-size:0.8rem; color:var(--text2);">💳 Credits remaining: <strong style="color:var(--accent2);">${creditsLeft}</strong></div>`;
+  }
+
+  return `
+    <div class="sentiment-card">
+      <div class="sentiment-header">
+        <h2>${data.person}</h2>
+        <span class="sentiment-badge" style="background:${color}22; color:${color};">${label}</span>
+      </div>
+      <div class="sentiment-bar">
+        <span style="color:var(--red); font-size:0.8rem;">Negative</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${barPct}%; background: ${color};"></div>
+        </div>
+        <span style="color:var(--green); font-size:0.8rem;">Positive</span>
+        <span class="bar-value">${s.avg_compound >= 0 ? '+' : ''}${s.avg_compound.toFixed(2)}</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card positive"><span class="num">${s.pct_positive}%</span><span class="label">Positive</span></div>
+        <div class="stat-card neutral"><span class="num">${s.pct_neutral}%</span><span class="label">Neutral</span></div>
+        <div class="stat-card negative"><span class="num">${s.pct_negative}%</span><span class="label">Negative</span></div>
+      </div>
+      ${sourcesHtml}
+      ${emotionsHtml}
+      ${headlinesHtml}
+      ${creditNote}
+    </div>`;
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
