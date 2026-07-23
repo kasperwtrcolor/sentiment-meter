@@ -2,7 +2,7 @@
   "buildCommand": null,
   "outputDirectory": "frontend",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://sentiment-meter.up.railway.app/$1" }
+    { "source": "/api/(.*)", "destination": "https://sentiment-meter-production.up.railway.app/$1" }
   ],
   "trailingSlash": false,
   "cleanUrls": true,
