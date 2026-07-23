@@ -1,15 +1,9 @@
 {
-  "name": "sentiment-meter",
-  "version": "2",
-  "public": true,
+  "buildCommand": null,
+  "outputDirectory": "frontend",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://sentiment-meter-api.up.railway.app/$1" },
-    { "source": "/(.*)", "destination": "/$1" }
+    { "source": "/api/(.*)", "destination": "https://sentiment-meter.up.railway.app/$1" }
   ],
-  "build": {
-    "command": "",
-    "output_directory": "frontend"
-  },
   "trailingSlash": false,
   "cleanUrls": true,
   "headers": [
