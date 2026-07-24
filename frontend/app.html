@@ -11,8 +11,8 @@
 <nav>
   <a href="/" class="logo"><span>Sentiment</span>Meter</a>
   <div class="nav-links">
-    <a href="index.html">Home</a>
-    <a href="dashboard.html" class="btn">Dashboard</a>
+    <a href="/">Home</a>
+    <a href="/dashboard" class="btn">Dashboard</a>
   </div>
 </nav>
 
@@ -58,7 +58,7 @@ async function runAnalysis() {
       });
       const data = await r.json();
       if (r.status === 402) {
-        resultsDiv.innerHTML = `<div class="sentiment-card" style="text-align:center;"><p style="color:var(--red); font-size:1.2rem; font-weight:600;">⚠️ Out of credits</p><p style="color:var(--text2); margin-top:0.5rem;">You have 0 credits remaining. <a href="dashboard.html" style="color:var(--cyan); font-weight:600;">Buy more credits →</a></p></div>`;
+        resultsDiv.innerHTML = `<div class="sentiment-card" style="text-align:center;"><p style="color:var(--red); font-size:1.2rem; font-weight:600;">⚠️ Out of credits</p><p style="color:var(--text2); margin-top:0.5rem;">You have 0 credits remaining. <a href="/dashboard" style="color:var(--cyan); font-weight:600;">Buy more credits →</a></p></div>`;
         return;
       }
       if (data.error) { resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Error: ${data.error}</p></div>`; return; }
@@ -80,7 +80,7 @@ async function runAnalysis() {
       if (data.error) { resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Error: ${data.error}</p></div>`; return; }
       resultsDiv.innerHTML = renderResults(data);
     } catch(err) {
-      resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Connection error. <a href="dashboard.html" style="color:var(--cyan);">Get an API key →</a></p></div>`;
+      resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Connection error. <a href="/dashboard" style="color:var(--cyan);">Get an API key →</a></p></div>`;
     } finally { btn.disabled = false; }
   }
 }

@@ -46,8 +46,8 @@ def create_checkout_session(email, plan_id, origin_url=None):
     if not user:
         return {"error": "Failed to create user"}, 500
     
-    success_url = f"{origin_url or FRONTEND_URL}/dashboard.html?session_id={{CHECKOUT_SESSION_ID}}&success=true"
-    cancel_url = f"{origin_url or FRONTEND_URL}/index.html?canceled=true"
+    success_url = f"{origin_url or FRONTEND_URL}/dashboard?session_id={{CHECKOUT_SESSION_ID}}&success=true"
+    cancel_url = f"{origin_url or FRONTEND_URL}/?canceled=true"
     
     try:
         session = stripe.checkout.Session.create(
