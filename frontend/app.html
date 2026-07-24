@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sentiment Meter — Analyze</title>
+  <title>Analyze Sentiment — Sentiment Meter</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <nav>
-  <a href="/" class="logo"><span>S</span>entiment <span>M</span>eter</a>
+  <a href="/" class="logo"><span>Sentiment</span>Meter</a>
   <div class="nav-links">
     <a href="index.html">Home</a>
     <a href="dashboard.html" class="btn">Dashboard</a>
@@ -17,17 +17,17 @@
 </nav>
 
 <div class="container">
-  <div style="text-align:center; padding:2rem 0;">
-    <h1>Analyze Sentiment</h1>
-    <p style="color:var(--text2); margin-top:0.5rem;">Type a name and get instant AI-powered analysis</p>
+  <div class="page-heading">
+    <h1>Sentiment Analyzer</h1>
+    <p>Real-time AI polarity &amp; emotion profiling across 100+ news sources</p>
   </div>
 
   <div class="search-box">
-    <input type="text" id="search" placeholder="e.g. Elon Musk, Taylor Swift, Donald Trump..." onkeypress="if(event.key==='Enter') runAnalysis()">
+    <input type="text" id="search" placeholder="e.g. Elon Musk, Taylor Swift, OpenAI..." onkeypress="if(event.key==='Enter') runAnalysis()">
     <button id="analyze-btn" onclick="runAnalysis()">Analyze →</button>
   </div>
 
-  <div id="results" style="margin-top:2rem;"></div>
+  <div id="results" style="margin-top:2.5rem;"></div>
 </div>
 
 <footer>
@@ -48,7 +48,7 @@ async function runAnalysis() {
   
   if (apiKey) {
     // Authenticated
-    resultsDiv.innerHTML = '<div style="text-align:center; padding:2rem;"><div class="spinner"></div><p style="color:var(--text2); margin-top:1rem;">Scanning 100+ articles...</p></div>';
+    resultsDiv.innerHTML = '<div style="text-align:center; padding:3rem;"><div class="spinner"></div><p style="color:var(--text2); margin-top:1rem; font-size:0.9rem;">Scanning 100+ articles...</p></div>';
     btn.disabled = true;
     try {
       const r = await fetch(API_BASE + '/analyze', {
@@ -58,7 +58,7 @@ async function runAnalysis() {
       });
       const data = await r.json();
       if (r.status === 402) {
-        resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red); font-size:1.2rem;">⚠️ Out of credits</p><p style="color:var(--text2);">You have ${data.credits} credits. <a href="dashboard.html" style="color:var(--accent2);">Buy more →</a></p></div>`;
+        resultsDiv.innerHTML = `<div class="sentiment-card" style="text-align:center;"><p style="color:var(--red); font-size:1.2rem; font-weight:600;">⚠️ Out of credits</p><p style="color:var(--text2); margin-top:0.5rem;">You have 0 credits remaining. <a href="dashboard.html" style="color:var(--cyan); font-weight:600;">Buy more credits →</a></p></div>`;
         return;
       }
       if (data.error) { resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Error: ${data.error}</p></div>`; return; }
@@ -68,7 +68,7 @@ async function runAnalysis() {
     } finally { btn.disabled = false; }
   } else {
     // Demo
-    resultsDiv.innerHTML = '<div style="text-align:center; padding:2rem;"><div class="spinner"></div><p style="color:var(--text2); margin-top:1rem;">Scanning (demo mode — 3 headlines only)...</p></div>';
+    resultsDiv.innerHTML = '<div style="text-align:center; padding:3rem;"><div class="spinner"></div><p style="color:var(--text2); margin-top:1rem; font-size:0.9rem;">Scanning (demo mode — limited results)...</p></div>';
     btn.disabled = true;
     try {
       const r = await fetch(API_BASE + '/analyze/demo', {
@@ -80,15 +80,15 @@ async function runAnalysis() {
       if (data.error) { resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Error: ${data.error}</p></div>`; return; }
       resultsDiv.innerHTML = renderResults(data);
     } catch(err) {
-      resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Connection error. <a href="dashboard.html" style="color:var(--accent2);">Get an API key →</a></p></div>`;
+      resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Connection error. <a href="dashboard.html" style="color:var(--cyan);">Get an API key →</a></p></div>`;
     } finally { btn.disabled = false; }
   }
 }
 
 function renderResults(data, creditsLeft) {
   const s = data.summary;
-  const label = s.sentiment_label;
-  const color = label.includes('Positive') ? '#00b894' : label.includes('Negative') ? '#d63031' : '#fdcb6e';
+  const label = s.sentiment_label || 'Neutral';
+  const color = label.includes('Positive') ? '#10b981' : label.includes('Negative') ? '#ef4444' : '#f59e0b';
   const barPct = ((s.avg_compound + 1) / 2 * 100).toFixed(1);
   
   let emotionsHtml = '';
@@ -114,15 +114,15 @@ function renderResults(data, creditsLeft) {
     const sorted = [...data.results].sort((a,b) => Math.abs(b.compound) - Math.abs(a.compound));
     sorted.forEach(r => {
       const c = r.compound >= 0.05 ? '🟢' : r.compound <= -0.05 ? '🔴' : '🟡';
-      const cc = r.compound >= 0.05 ? '#00b894' : r.compound <= -0.05 ? '#d63031' : '#fdcb6e';
+      const cc = r.compound >= 0.05 ? '#10b981' : r.compound <= -0.05 ? '#ef4444' : '#f59e0b';
       let emotions = '';
       if (r.emotions && Object.keys(r.emotions).length > 0) {
         const top3 = Object.entries(r.emotions).sort((a,b) => b[1]-a[1]).slice(0,3);
-        emotions = `<div style="font-size:0.8rem; color:var(--text2);">↳ ${top3.map(([e,s]) => `${e} ${s}%`).join(' · ')}</div>`;
+        emotions = `<div style="font-size:0.78rem; color:var(--text3); margin-top:0.2rem;">↳ ${top3.map(([e,s]) => `${e} ${s}%`).join(' · ')}</div>`;
       }
       headlinesHtml += `
         <div class="headline-item">
-          <span style="color:${cc}; font-weight:700;">${c} ${r.compound >= 0 ? '+' : ''}${r.compound.toFixed(2)}</span>
+          <span style="color:${cc}; font-weight:700; font-family:'JetBrains Mono', monospace; font-size:0.85rem;">${c} ${r.compound >= 0 ? '+' : ''}${r.compound.toFixed(2)}</span>
           <span class="source">${r.source}</span>
           <div class="text">${r.text.substring(0, 180)}${r.text.length > 180 ? '...' : ''}</div>
           ${emotions}
@@ -134,26 +134,26 @@ function renderResults(data, creditsLeft) {
   let sourcesHtml = '';
   if (s.sources) {
     const entries = Object.entries(s.sources).slice(0, 5);
-    sourcesHtml = `<div style="margin:0.5rem 0; font-size:0.8rem; color:var(--text2);">📡 ${entries.map(([src, cnt]) => `${src} (${cnt})`).join(' · ')}</div>`;
+    sourcesHtml = `<div style="margin:0.8rem 0; font-size:0.8rem; color:var(--text3);">📡 ${entries.map(([src, cnt]) => `${src} (${cnt})`).join(' · ')}</div>`;
   }
 
   let creditNote = '';
   if (creditsLeft !== undefined) {
-    creditNote = `<div style="margin-top:1rem; font-size:0.8rem; color:var(--text2);">💳 Credits remaining: <strong style="color:var(--accent2);">${creditsLeft}</strong></div>`;
+    creditNote = `<div style="margin-top:1.5rem; font-size:0.85rem; color:var(--text2); text-align:center; padding-top:1rem; border-top:1px solid var(--border-subtle);">💳 Credits remaining: <strong style="color:var(--cyan); font-family:'JetBrains Mono', monospace;">${creditsLeft}</strong></div>`;
   }
 
   return `
     <div class="sentiment-card">
       <div class="sentiment-header">
         <h2>${data.person}</h2>
-        <span class="sentiment-badge" style="background:${color}22; color:${color};">${label}</span>
+        <span class="sentiment-badge" style="background:${color}22; color:${color}; border:1px solid ${color}44;">${label}</span>
       </div>
       <div class="sentiment-bar">
-        <span style="color:var(--red); font-size:0.8rem;">Negative</span>
+        <span style="color:var(--red); font-size:0.78rem; font-weight:500;">Negative</span>
         <div class="bar-track">
-          <div class="bar-fill" style="width:${barPct}%; background: ${color};"></div>
+          <div class="bar-fill" style="width:${barPct}%; background: ${color}; color:${color}"></div>
         </div>
-        <span style="color:var(--green); font-size:0.8rem;">Positive</span>
+        <span style="color:var(--green); font-size:0.78rem; font-weight:500;">Positive</span>
         <span class="bar-value">${s.avg_compound >= 0 ? '+' : ''}${s.avg_compound.toFixed(2)}</span>
       </div>
       <div class="stats-grid">

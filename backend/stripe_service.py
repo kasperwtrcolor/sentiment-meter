@@ -6,6 +6,7 @@ import stripe
 from database import get_user_by_email, get_user_by_stripe_customer, add_credits, find_or_create_user
 
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+stripe.api_key = STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:8001")
 
@@ -60,6 +61,9 @@ def create_checkout_session(email, plan_id, origin_url=None):
                         "description": f"{plan['credits']:,} sentiment scans" if plan["credits"] < 999999 else "Unlimited sentiment scans",
                     },
                     "unit_amount": plan["price_cents"],
+                    **({
+                        "recurring": {"interval": "month"}
+                    } if plan.get("is_recurring") else {}),
                 },
                 "quantity": 1,
             }],

@@ -9,7 +9,7 @@
 <body>
 
 <nav>
-  <a href="/" class="logo"><span>S</span>entiment <span>M</span>eter</a>
+  <a href="/" class="logo"><span>Sentiment</span>Meter</a>
   <div class="nav-links">
     <a href="index.html">Home</a>
     <a href="app.html">Analyze</a>
@@ -18,62 +18,80 @@
 
 <div class="container">
   <!-- Auth section -->
-  <div id="auth-section" style="text-align:center; padding:3rem 1rem;">
-    <h1>Dashboard</h1>
-    <p style="color:var(--text2); margin:1rem 0;">Enter your email to get started — you'll receive 3 free scans and your API key.</p>
-    <div class="search-box" style="max-width:400px;">
+  <div id="auth-section" class="auth-container">
+    <h1>Dashboard Access</h1>
+    <p>Enter your email to activate your account. You'll receive 3 free scans and your unique API key immediately.</p>
+    
+    <div class="search-box">
       <input type="email" id="email-input" placeholder="your@email.com" style="text-align:center;">
-      <button onclick="signup()">Get API Key</button>
+      <button onclick="signup()">Get API Key →</button>
     </div>
-    <p id="auth-error" style="color:var(--red); margin-top:0.5rem; display:none;"></p>
-    <div id="api-key-section" style="display:none; margin-top:1.5rem;">
-      <p style="color:var(--text2); margin-bottom:0.5rem;">Your API key — save this to use in <code style="color:var(--accent2);">X-API-Key</code> header:</p>
+    
+    <p id="auth-error" style="color:var(--red); margin-top:0.8rem; font-size:0.88rem; display:none;"></p>
+    
+    <div id="api-key-section" style="display:none; margin-top:1.8rem;">
+      <p style="color:var(--text2); font-size:0.85rem; margin-bottom:0.5rem;">Your API key — save this to authenticate requests:</p>
       <div class="api-key-box">
         <span id="api-key-display"></span>
         <button class="copy-btn" onclick="copyApiKey()">Copy</button>
       </div>
-      <p style="color:var(--text2); font-size:0.85rem; margin-top:0.5rem;">🔑 Also saved to your browser for this site.</p>
+      <p style="color:var(--text3); font-size:0.8rem; margin-top:0.6rem;">🔑 Automatically saved to your browser session.</p>
     </div>
   </div>
 
   <!-- Dashboard content (shown after auth) -->
-  <div id="dashboard-content" style="display:none;">
+  <div id="dashboard-content" style="display:none; animation: fadeInUp 0.6s ease-out;">
+    <div class="page-heading" style="padding-top:1rem;">
+      <h1>Account Overview</h1>
+      <p>Manage your sentiment credits and view past analysis reports</p>
+    </div>
+
     <div class="credits-display" id="credits-section">
       <div>
         <span class="big-num" id="credits-count">—</span>
         <div class="info">credits remaining</div>
       </div>
-      <div>
-        <span class="big-num" id="scans-count" style="font-size:2rem;">—</span>
+      <div style="border-left: 1px solid var(--border); padding-left: 2.5rem;">
+        <span class="big-num" id="scans-count" style="font-size:2.8rem;">—</span>
         <div class="info">total scans performed</div>
       </div>
     </div>
 
-    <h2 style="margin-bottom:1rem;">Buy Credits</h2>
-    <div class="pricing-grid" style="max-width: 750px;">
+    <div class="section-title" style="text-align:left; margin: 2rem 0 1rem;">
+      <h2>Purchase Scans</h2>
+      <p>Select a credit package to power your analyses</p>
+    </div>
+
+    <div class="pricing-grid" style="max-width: 100%;">
       <div class="plan-card">
         <h3>Starter</h3>
         <div class="price">$5</div>
-        <div class="desc">10 scans</div>
-        <button class="btn" style="border:none; cursor:pointer;" onclick="checkout('starter')">Buy Now</button>
+        <div class="desc">10 full sentiment scans</div>
+        <button class="btn" onclick="checkout('starter')">Buy 10 Credits</button>
       </div>
+      
       <div class="plan-card featured">
+        <div class="plan-badge">Popular</div>
         <h3>Pro</h3>
         <div class="price">$20</div>
-        <div class="desc">50 scans</div>
-        <button class="btn" style="border:none; cursor:pointer;" onclick="checkout('pro')">Buy Now</button>
+        <div class="desc">50 full sentiment scans</div>
+        <button class="btn" onclick="checkout('pro')">Buy 50 Credits</button>
       </div>
+      
       <div class="plan-card">
         <h3>Unlimited</h3>
-        <div class="price">$50/mo</div>
-        <div class="desc">Unlimited scans</div>
-        <button class="btn" style="border:none; cursor:pointer;" onclick="checkout('unlimited')">Buy Now</button>
+        <div class="price">$50<span style="font-size:1rem; color:var(--text3);">/mo</span></div>
+        <div class="desc">Unlimited monthly scans</div>
+        <button class="btn" onclick="checkout('unlimited')">Subscribe Now</button>
       </div>
     </div>
 
-    <h2 style="margin:2rem 0 1rem;">Scan History</h2>
-    <div id="history-section">
-      <p style="color:var(--text2);">No scans yet.</p>
+    <div class="section-title" style="text-align:left; margin: 3rem 0 1rem;">
+      <h2>Recent Analysis History</h2>
+    </div>
+    
+    <div id="history-section" class="glass-card" style="padding:1.5rem;">
+      <p style="color:var(--text3); text-align:center;">No scans performed yet.</p>
     </div>
   </div>
 </div>
@@ -87,15 +105,13 @@
 <script>
 const API_BASE = 'https://sentiment-meter-production.up.railway.app';
 
-// On load, check if API key stored
 window.onload = function() {
   const key = localStorage.getItem('sm_api_key');
   if (key) showDashboard(key);
   
-  // Check for checkout success
   const params = new URLSearchParams(window.location.search);
   if (params.get('success') === 'true') {
-    showToast('✅ Credits purchased! Reloading...', 'success');
+    showToast('✅ Credits successfully purchased!', 'success');
     setTimeout(() => {
       const key = localStorage.getItem('sm_api_key');
       if (key) showDashboard(key);
@@ -130,7 +146,7 @@ async function signup() {
       document.getElementById('api-key-display').textContent = data.api_key;
       document.getElementById('api-key-section').style.display = 'block';
       document.getElementById('auth-section').querySelector('.search-box').style.display = 'none';
-      document.getElementById('auth-section').querySelector('p:first-of-type').textContent = '✅ 3 free credits activated!';
+      document.getElementById('auth-section').querySelector('p:first-of-type').textContent = '✅ 3 free credits activated for ' + email + '!';
       showToast('🎉 Welcome! 3 free credits loaded.', 'success');
       showDashboard(data.api_key);
     } else {
@@ -144,7 +160,7 @@ async function signup() {
 }
 
 async function showDashboard(key) {
-  document.getElementById('auth-section').innerHTML = '<h1>Dashboard</h1>';
+  document.getElementById('auth-section').style.display = 'none';
   document.getElementById('dashboard-content').style.display = 'block';
   
   // Load credits
@@ -153,8 +169,8 @@ async function showDashboard(key) {
       headers: { 'X-API-Key': key }
     });
     const data = await r.json();
-    document.getElementById('credits-count').textContent = data.credits;
-    document.getElementById('scans-count').textContent = data.total_scans;
+    document.getElementById('credits-count').textContent = data.credits !== undefined ? data.credits : 0;
+    document.getElementById('scans-count').textContent = data.total_scans !== undefined ? data.total_scans : 0;
   } catch(e) {}
   
   // Load history
@@ -166,26 +182,35 @@ async function showDashboard(key) {
     const histDiv = document.getElementById('history-section');
     if (data.history && data.history.length > 0) {
       let html = `<table class="history-table">
-        <tr><th>Person</th><th>Sentiment</th><th>Score</th><th>Articles</th><th>Date</th></tr>`;
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Sentiment</th>
+            <th>Score</th>
+            <th>Articles</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>`;
       data.history.forEach(h => {
-        const c = h.sentiment_label && h.sentiment_label.includes('Positive') ? '#00b894' :
-                  h.sentiment_label && h.sentiment_label.includes('Negative') ? '#d63031' : '#fdcb6e';
+        const c = h.sentiment_label && h.sentiment_label.includes('Positive') ? '#10b981' :
+                  h.sentiment_label && h.sentiment_label.includes('Negative') ? '#ef4444' : '#f59e0b';
         html += `<tr>
           <td><strong>${h.person_name}</strong></td>
-          <td style="color:${c};">${h.sentiment_label || '—'}</td>
-          <td>${h.avg_compound ? (h.avg_compound >= 0 ? '+' : '') + h.avg_compound.toFixed(2) : '—'}</td>
+          <td style="color:${c}; font-weight:600;">${h.sentiment_label || '—'}</td>
+          <td style="font-family:'JetBrains Mono', monospace;">${h.avg_compound ? (h.avg_compound >= 0 ? '+' : '') + h.avg_compound.toFixed(2) : '—'}</td>
           <td>${h.articles_analyzed || '—'}</td>
-          <td style="color:var(--text2);">${h.created_at ? new Date(h.created_at * 1000).toLocaleDateString() : '—'}</td>
+          <td style="color:var(--text3);">${h.created_at ? new Date(h.created_at * 1000).toLocaleDateString() : '—'}</td>
         </tr>`;
       });
-      html += '</table>';
+      html += '</tbody></table>';
       histDiv.innerHTML = html;
     }
   } catch(e) {}
 }
 
 async function checkout(planId) {
-  const email = prompt('Enter your email for the purchase:');
+  const email = prompt('Confirm your email address for Stripe receipt & credit assignment:');
   if (!email) return;
   try {
     const r = await fetch(API_BASE + '/checkout', {
@@ -200,14 +225,14 @@ async function checkout(planId) {
       showToast('Error: ' + (data.error || 'Checkout failed'), 'error');
     }
   } catch(e) {
-    showToast('Connection error', 'error');
+    showToast('Connection error during checkout', 'error');
   }
 }
 
 function copyApiKey() {
   const key = document.getElementById('api-key-display').textContent;
   navigator.clipboard.writeText(key).then(() => {
-    showToast('✅ API key copied!', 'success');
+    showToast('✅ API key copied to clipboard!', 'success');
   });
 }
 
