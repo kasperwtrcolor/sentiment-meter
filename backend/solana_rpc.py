@@ -3,6 +3,7 @@ import json
 import os
 import struct
 import base64
+import time
 from typing import Dict, Any
 
 from stocks import STOCKS, USDC
@@ -10,11 +11,21 @@ from stocks import STOCKS, USDC
 HELIUS_API_KEY = os.environ.get("HELIUS_API_KEY", "5439acc7-b513-4fcd-bb51-c3adfe0756ad")
 RPC_URL = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
 
+_balance_cache = {}
+CACHE_TTL = 30
+
 def get_wallet_token_balances(wallet_address: str) -> Dict[str, float]:
     """
     Fetches real SPL token balances for the provided wallet address via Solana RPC.
     Returns a dictionary mapping tickers (e.g., 'USDC', 'NVDA') to their token amounts (float).
+    Caches results for 30 seconds to conserve Helius RPC credits.
     """
+    now = time.time()
+    if wallet_address in _balance_cache:
+        cached_data, timestamp = _balance_cache[wallet_address]
+        if now - timestamp < CACHE_TTL:
+            return cached_data
+
     results = {}
     
     # Map mint address -> ticker symbol for quick lookup
@@ -62,4 +73,5 @@ def get_wallet_token_balances(wallet_address: str) -> Dict[str, float]:
     except Exception as e:
         print(f"Error fetching RPC balances for {wallet_address}: {e}")
         
+    _balance_cache[wallet_address] = (results, time.time())
     return results
