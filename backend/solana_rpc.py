@@ -35,40 +35,51 @@ def get_wallet_token_balances(wallet_address: str) -> Dict[str, float]:
         mint_to_ticker[info["mint"]] = ticker
         mint_to_decimals[info["mint"]] = info["decimals"]
 
-    payload = {
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "getTokenAccountsByOwner",
-        "params": [
-            wallet_address,
-            {"programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"},
-            {"encoding": "jsonParsed"}
-        ]
-    }
+    payloads = [
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getTokenAccountsByOwner",
+            "params": [
+                wallet_address,
+                {"programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"},
+                {"encoding": "jsonParsed"}
+            ]
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "getTokenAccountsByOwner",
+            "params": [
+                wallet_address,
+                {"programId": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"},
+                {"encoding": "jsonParsed"}
+            ]
+        }
+    ]
 
     try:
         req = urllib.request.Request(
             RPC_URL,
-            data=json.dumps(payload).encode("utf-8"),
+            data=json.dumps(payloads).encode("utf-8"),
             headers={"Content-Type": "application/json"}
         )
         with urllib.request.urlopen(req, timeout=8) as response:
-            data = json.loads(response.read().decode("utf-8"))
+            responses = json.loads(response.read().decode("utf-8"))
             
-            if "result" in data and "value" in data["result"]:
-                accounts = data["result"]["value"]
-                for account in accounts:
-                    account_data = account.get("account", {}).get("data", {}).get("parsed", {}).get("info", {})
-                    mint = account_data.get("mint")
-                    
-                    if mint in mint_to_ticker:
-                        ticker = mint_to_ticker[mint]
-                        # uiAmount handles decimals correctly
-                        amount = account_data.get("tokenAmount", {}).get("uiAmount", 0.0)
+            for data in responses:
+                if "result" in data and "value" in data["result"]:
+                    accounts = data["result"]["value"]
+                    for account in accounts:
+                        account_data = account.get("account", {}).get("data", {}).get("parsed", {}).get("info", {})
+                        mint = account_data.get("mint")
                         
-                        # Add to results (in case of multiple accounts for same mint, aggregate)
-                        if amount:
-                            results[ticker] = results.get(ticker, 0.0) + amount
+                        if mint in mint_to_ticker:
+                            ticker = mint_to_ticker[mint]
+                            amount = account_data.get("tokenAmount", {}).get("uiAmount", 0.0)
+                            
+                            if amount:
+                                results[ticker] = results.get(ticker, 0.0) + amount
                             
     except Exception as e:
         print(f"Error fetching RPC balances for {wallet_address}: {e}")

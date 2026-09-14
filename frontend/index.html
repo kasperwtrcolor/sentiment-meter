@@ -574,7 +574,10 @@
       const badge = document.getElementById('wallet-badge');
       const heroBtn = document.getElementById('hero-action-btn');
 
+      const landing = document.getElementById('landing-overlay');
+
       if (connectedWallet) {
+        if (landing) landing.classList.add('hidden');
         btn.classList.add('connected');
         const displayName = currentUserProfile ? currentUserProfile.display_name : (connectedWallet.substring(0, 6) + '...');
         label.textContent = displayName;
@@ -584,6 +587,7 @@
           heroBtn.innerHTML = `<span>Connected: ${displayName} ↗</span>`;
         }
       } else {
+        if (landing) landing.classList.remove('hidden');
         btn.classList.remove('connected');
         label.textContent = 'Connect Solana Wallet';
         badge.textContent = 'Guest Trader (Click to Connect)';
