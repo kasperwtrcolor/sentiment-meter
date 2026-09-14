@@ -16,8 +16,8 @@
         <span class="brand-badge">◉</span> Sentiment<span style="color:#7e8494; font-weight:400; margin-left:3px;">Meter</span>
       </a>
       <span>•</span>
-      <span style="font-size:0.78rem; color:var(--text-dim); font-family:var(--font-mono);" id="landing-toggle-btn" onclick="toggleLanding()">
-        [Toggle Architecture Guide]
+      <span style="font-size:0.78rem; color:var(--text-dim); font-family:var(--font-mono); cursor:pointer;" id="landing-toggle-btn" onclick="toggleLanding()">
+        [Toggle Guide]
       </span>
       <span>•</span>
       <span class="updated-tag" id="last-updated-clock">updated --:--:--</span>
@@ -37,7 +37,7 @@
 
       <!-- Rebalance Action Trigger -->
       <button class="rebalance-action-btn" id="rebalance-btn" onclick="initiateRebalanceFlow()">
-        <span>⚡ Rebalance Jupiter</span>
+        <span>⚡ Auto-Rebalance Basket</span>
       </button>
     </div>
   </header>
@@ -55,18 +55,18 @@
           <div class="landing-left">
             <h1>Autonomous <span class="glow-green">xStock Rebalancing</span> on Solana</h1>
             <p>
-              Sentiment Meter continuously evaluates Google News RSS streams, scores polarity and 8 emotional dimensions using NLP, 
-              benchmarks real-time prices via Pyth Hermes feeds, and executes dynamic rebalancing across Solana equity tokens and USDC via Jupiter DEX.
+              Sentiment Meter evaluates Google News RSS, scores polarity and emotion using NLP, 
+              benchmarks prices via Pyth Hermes, and executes non-custodial swaps between Solana equity tokens and USDC via Jupiter DEX.
             </p>
             <div class="landing-features-row">
               <div class="feat-item"><span class="feat-dot"></span> Google News VADER NLP</div>
               <div class="feat-item"><span class="feat-dot"></span> Pyth Network Feeds</div>
-              <div class="feat-item"><span class="feat-dot"></span> Jupiter v1 Liquidity Routing</div>
-              <div class="feat-item"><span class="feat-dot"></span> Non-Custodial Client Signing</div>
+              <div class="feat-item"><span class="feat-dot"></span> Jupiter v1 Routing</div>
+              <div class="feat-item"><span class="feat-dot"></span> Client-Side Approval</div>
             </div>
           </div>
           <div>
-            <button class="rebalance-action-btn" style="padding:0.65rem 1.4rem; font-size:0.88rem;" onclick="openWalletModal()">
+            <button class="rebalance-action-btn" id="hero-action-btn" style="padding:0.65rem 1.4rem; font-size:0.88rem;" onclick="handleHeroButtonClick()">
               <span>Connect Wallet to Trade ↗</span>
             </button>
           </div>
@@ -92,7 +92,7 @@
         </div>
 
         <div style="font-size:0.75rem; color:var(--text-dim); font-family:var(--font-mono);">
-          Router: <span style="color:var(--text-main);">Jupiter v1</span> • Oracle: <span style="color:var(--text-main);">Pyth Hermes</span>
+          USDC Cash Pool: <span style="color:var(--green-text); font-weight:700;" id="top-usdc-val">$0.00</span>
         </div>
       </div>
 
@@ -101,18 +101,19 @@
         <table class="terminal-table">
           <thead>
             <tr>
-              <th>Stock</th>
-              <th>Pyth Price</th>
-              <th>24h Move</th>
+              <th>Stock / Asset</th>
+              <th>Price (Pyth)</th>
+              <th>24h Delta</th>
               <th>Sentiment Signal</th>
+              <th>Your Holding</th>
               <th>Current Weight</th>
               <th>Target Weight</th>
-              <th>Action Required</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody id="stocks-table-body">
             <tr>
-              <td colspan="7" style="text-align:center; padding:2rem; color:var(--text-dim);">Loading live Solana xStock data...</td>
+              <td colspan="8" style="text-align:center; padding:2rem; color:var(--text-dim);">Loading live Solana xStock data...</td>
             </tr>
           </tbody>
         </table>
@@ -125,7 +126,7 @@
             On-Chain Execution History
           </span>
           <span id="wallet-badge" style="font-family:var(--font-mono); font-size:0.72rem; color:var(--accent-cyan); cursor:pointer;" onclick="openProfileModal()">
-            User: CyberBull Quant #412
+            User: ...
           </span>
         </div>
 
@@ -166,6 +167,10 @@
             <div class="inspector-stats-meta" id="insp-name">NVIDIA Corporation</div>
           </div>
         </div>
+
+        <button class="rebalance-action-btn" style="padding:0.4rem 0.8rem; font-size:0.76rem;" id="insp-swap-trigger-btn" onclick="openDirectSwapModal(selectedTicker)">
+          ⇄ Trade
+        </button>
       </div>
 
       <!-- Price Comparison Box -->
@@ -230,6 +235,72 @@
 
   </main>
 
+  <!-- Direct Stock Swap / Rebalance Modal (Triggers on Row Selection) -->
+  <div class="modal-backdrop" id="direct-swap-modal">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closeDirectSwapModal()">&times;</button>
+      
+      <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1rem;">
+        <img src="" id="swap-modal-icon" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+        <div>
+          <h3 style="font-size:1.15rem; font-weight:700; color:#fff;" id="swap-modal-title">Rebalance $NVDA</h3>
+          <p style="color:var(--text-dim); font-size:0.75rem;">Jupiter Swap Route (Instant On-Chain Settlement)</p>
+        </div>
+      </div>
+
+      <!-- Direction Toggle: BUY (USDC -> Stock) or SELL (Stock -> USDC) -->
+      <div class="direction-toggle-row">
+        <button class="dir-btn active-buy" id="btn-dir-buy" onclick="setSwapDirection('BUY')">
+          Buy with USDC
+        </button>
+        <button class="dir-btn" id="btn-dir-sell" onclick="setSwapDirection('SELL')">
+          Sell into USDC
+        </button>
+      </div>
+
+      <!-- Available Balance Indicator -->
+      <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-dim); margin-bottom:0.4rem; font-family:var(--font-mono);">
+        <span>Available: <strong id="swap-avail-bal" style="color:#fff;">$0.00</strong></span>
+        <span>Sentiment Signal: <strong id="swap-sentiment-tag" style="color:var(--green-text);">Bullish</strong></span>
+      </div>
+
+      <!-- Amount Input Box -->
+      <div class="amount-input-group">
+        <input type="number" id="swap-amount-input" placeholder="0.00" value="250" min="1" step="10">
+        <span class="amount-currency-tag" id="swap-currency-lbl">USDC</span>
+      </div>
+
+      <!-- Quick Amount Presets -->
+      <div class="quick-amount-row">
+        <button class="quick-chip" onclick="setQuickAmount(100)">$100</button>
+        <button class="quick-chip" onclick="setQuickAmount(250)">$250</button>
+        <button class="quick-chip" onclick="setQuickAmount(500)">$500</button>
+        <button class="quick-chip" onclick="setQuickAmountMax()">MAX</button>
+      </div>
+
+      <!-- Execution Route Summary -->
+      <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:0.8rem; font-size:0.78rem; margin-bottom:1.2rem; font-family:var(--font-mono);">
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+          <span style="color:var(--text-dim);">Est. Output:</span>
+          <span id="swap-est-shares" style="color:#fff; font-weight:600;">1.19 Shares</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+          <span style="color:var(--text-dim);">Pyth Oracle Price:</span>
+          <span id="swap-modal-price" style="color:var(--text-main);">$210.22</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-dim);">Slippage / DEX:</span>
+          <span style="color:var(--green-text);">0.5% via Jupiter</span>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button class="rebalance-action-btn" style="width:100%; justify-content:center; padding:0.75rem; font-size:0.95rem;" id="btn-submit-direct-swap" onclick="executeDirectSwap()">
+        <span>Confirm Swap via Wallet</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Wallet Connect Modal -->
   <div class="modal-backdrop" id="wallet-modal">
     <div class="modal-dialog">
@@ -271,7 +342,7 @@
         </div>
       </div>
       <p style="font-size:0.72rem; color:var(--text-dim); line-height:1.4;">
-        🔐 Model A Non-Custodial: Swaps are prepared via Jupiter API and signed directly by your wallet. The server never holds custody of your keys.
+        🔐 Model A Non-Custodial: Swaps are routed via Jupiter API and signed directly by your wallet.
       </p>
     </div>
   </div>
@@ -324,11 +395,11 @@
     </div>
   </div>
 
-  <!-- Model A: Wallet Transaction Approval Modal -->
+  <!-- Model A: Basket Auto-Rebalance Review Modal -->
   <div class="modal-backdrop" id="approval-modal">
     <div class="modal-dialog">
       <h3 style="font-size:1.1rem; font-weight:700; color:#fff; display:flex; align-items:center; gap:0.4rem;">
-        <span style="color:var(--green);">⚡</span> Jupiter Transaction Approval
+        <span style="color:var(--green);">⚡</span> Jupiter Rebalance Approval
       </h3>
       <p style="color:var(--text-muted); font-size:0.82rem; margin-top:0.2rem;">
         Review the sentiment-calculated portfolio rotation before broadcasting.
@@ -377,14 +448,23 @@
     let connectedWallet = localStorage.getItem('sm_wallet_address') || null;
     let currentUserProfile = null;
     let pendingRebalanceData = null;
+    let swapDirection = 'BUY'; // 'BUY' (USDC -> Stock) or 'SELL' (Stock -> USDC)
 
     // ── Initial Boot ──
     window.addEventListener('DOMContentLoaded', async () => {
       if (connectedWallet) {
         await fetchWalletUser(connectedWallet);
+      } else {
+        updateWalletUI();
       }
       await loadData();
       setInterval(loadData, 15000);
+
+      // Auto update share estimate when amount changes in trade modal
+      const amtInput = document.getElementById('swap-amount-input');
+      if (amtInput) {
+        amtInput.addEventListener('input', updateSwapModalEstimates);
+      }
     });
 
     async function loadData() {
@@ -395,8 +475,13 @@
         
         if (allData.user_profile) {
           currentUserProfile = allData.user_profile;
-          updateWalletUI();
         }
+        updateWalletUI();
+
+        // Update USDC Top Indicator
+        const positions = (allData.portfolio && allData.portfolio.positions) || {};
+        const usdcVal = (positions.USDC && positions.USDC.usd_value) || 0;
+        document.getElementById('top-usdc-val').textContent = '$' + usdcVal.toLocaleString(undefined, {minimumFractionDigits: 2});
 
         renderTable();
         renderInspector(selectedTicker);
@@ -411,6 +496,14 @@
 
     // ── Wallet Management ──
     function handleWalletButtonClick() {
+      if (connectedWallet) {
+        openProfileModal();
+      } else {
+        openWalletModal();
+      }
+    }
+
+    function handleHeroButtonClick() {
       if (connectedWallet) {
         openProfileModal();
       } else {
@@ -445,7 +538,7 @@
           return;
         }
       } else {
-        // Instant Sandbox Burner Wallet for smooth demonstration
+        // Instant Sandbox Burner Wallet
         const randHex = Array.from({length: 44}, () => '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random() * 58)]).join('');
         addr = randHex;
       }
@@ -468,26 +561,40 @@
         const d = await res.json();
         if (d.success) {
           currentUserProfile = d.profile;
-          updateWalletUI();
         }
       } catch (e) {
         console.error(e);
       }
+      updateWalletUI();
     }
 
     function updateWalletUI() {
       const btn = document.getElementById('wallet-connect-btn');
       const label = document.getElementById('wallet-btn-label');
       const badge = document.getElementById('wallet-badge');
+      const heroBtn = document.getElementById('hero-action-btn');
 
       if (connectedWallet && currentUserProfile) {
         btn.classList.add('connected');
         label.textContent = currentUserProfile.display_name;
         badge.textContent = `User: ${currentUserProfile.display_name} (${connectedWallet.substring(0, 4)}...${connectedWallet.substring(connectedWallet.length - 4)})`;
+        if (heroBtn) {
+          heroBtn.innerHTML = `<span>View Profile (${currentUserProfile.display_name}) ↗</span>`;
+        }
+      } else if (connectedWallet) {
+        btn.classList.add('connected');
+        label.textContent = connectedWallet.substring(0, 6) + '...' + connectedWallet.substring(connectedWallet.length - 4);
+        badge.textContent = `User: ${connectedWallet.substring(0, 6)}...`;
+        if (heroBtn) {
+          heroBtn.innerHTML = `<span>Wallet Connected ↗</span>`;
+        }
       } else {
         btn.classList.remove('connected');
         label.textContent = 'Connect Solana Wallet';
-        badge.textContent = 'User: CyberBull Quant #412 (Guest)';
+        badge.textContent = 'Guest Trader (Click to Connect)';
+        if (heroBtn) {
+          heroBtn.innerHTML = `<span>Connect Wallet to Trade ↗</span>`;
+        }
       }
     }
 
@@ -546,7 +653,7 @@
       banner.style.display = banner.style.display === 'none' ? 'block' : 'none';
     }
 
-    // ── Table Rendering ──
+    // ── Table Rendering with Direct Row Selection & Rebalance Action ──
     function renderTable() {
       const tbody = document.getElementById('stocks-table-body');
       const positions = (allData.portfolio && allData.portfolio.positions) || {};
@@ -581,10 +688,15 @@
 
         const tr = document.createElement('tr');
         if (isSelected) tr.className = 'selected-row';
-        tr.onclick = () => {
+        
+        // Clicking row selects and prompts direct rebalance modal if not USDC
+        tr.onclick = (e) => {
           selectedTicker = sym;
           renderTable();
           renderInspector(sym);
+          if (sym !== 'USDC' && !e.target.closest('button')) {
+            openDirectSwapModal(sym);
+          }
         };
 
         tr.innerHTML = `
@@ -603,6 +715,9 @@
             <span class="sentiment-tag ${scoreClass}">${scoreLabel}</span>
             <span style="font-size:0.72rem; color:var(--text-dim); margin-left:4px;">${s.sentiment_label || 'Neutral'}</span>
           </td>
+          <td style="font-family:var(--font-mono); font-weight:600;">
+            $${(pos.usd_value || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
+          </td>
           <td>
             <div class="share-bar-container">
               <div class="share-track">
@@ -620,13 +735,153 @@
             </div>
           </td>
           <td>
-            <span style="font-size:0.75rem; color:${tgtPct > currPct ? 'var(--green-text)' : tgtPct < currPct ? 'var(--red-text)' : 'var(--text-dim)'}; font-family:var(--font-mono); font-weight:600;">
-              ${tgtPct > currPct ? 'BUY ROTATION' : tgtPct < currPct ? 'SELL ROTATION' : 'BALANCED'}
-            </span>
+            ${sym === 'USDC' ? '<span style="color:var(--text-dim); font-size:0.75rem;">Anchor Cash</span>' : `
+              <button class="pill-btn ${tgtPct > currPct ? 'pill-pos' : 'pill-neg'}" onclick="event.stopPropagation(); openDirectSwapModal('${sym}')">
+                ${tgtPct > currPct ? 'Buy USDC→' + sym : 'Sell ' + sym + '→USDC'}
+              </button>
+            `}
           </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    // ── Direct Stock Rebalance Modal (USDC <-> Stock) ──
+    function openDirectSwapModal(sym) {
+      if (sym === 'USDC') return;
+      selectedTicker = sym;
+      const positions = (allData.portfolio && allData.portfolio.positions) || {};
+      const pos = positions[sym] || {};
+      const sentiments = allData.sentiment_scores || {};
+      const s = sentiments[sym] || {};
+      const targets = allData.target_weights || {};
+
+      document.getElementById('swap-modal-title').textContent = `Rebalance $${sym}`;
+      document.getElementById('swap-modal-icon').src = pos.logo || `https://assets.parqet.com/logos/symbol/${sym}?format=png`;
+      document.getElementById('swap-modal-price').textContent = `$${(pos.price_usd || 100).toFixed(2)}`;
+      
+      const score = s.compound_score || 0;
+      const tag = document.getElementById('swap-sentiment-tag');
+      tag.textContent = `${score >= 0 ? '+' : ''}${score.toFixed(2)} (${s.sentiment_label || 'Neutral'})`;
+      tag.style.color = score > 0.05 ? 'var(--green-text)' : score < -0.05 ? 'var(--red-text)' : 'var(--text-main)';
+
+      // Auto-set direction based on current vs target weight
+      const currW = pos.current_weight || 0;
+      const tgtW = targets[sym] !== undefined ? targets[sym] : currW;
+      if (tgtW < currW) {
+        setSwapDirection('SELL');
+      } else {
+        setSwapDirection('BUY');
+      }
+
+      updateSwapModalEstimates();
+      document.getElementById('direct-swap-modal').classList.add('open');
+    }
+
+    function closeDirectSwapModal() {
+      document.getElementById('direct-swap-modal').classList.remove('open');
+    }
+
+    function setSwapDirection(dir) {
+      swapDirection = dir;
+      const buyBtn = document.getElementById('btn-dir-buy');
+      const sellBtn = document.getElementById('btn-dir-sell');
+      const submitBtn = document.getElementById('btn-submit-direct-swap');
+      const currLbl = document.getElementById('swap-currency-lbl');
+
+      if (dir === 'BUY') {
+        buyBtn.className = 'dir-btn active-buy';
+        sellBtn.className = 'dir-btn';
+        currLbl.textContent = 'USDC';
+        submitBtn.innerHTML = `<span>Swap USDC → $${selectedTicker}</span>`;
+      } else {
+        sellBtn.className = 'dir-btn active-sell';
+        buyBtn.className = 'dir-btn';
+        currLbl.textContent = 'USD Value';
+        submitBtn.innerHTML = `<span>Swap $${selectedTicker} → USDC</span>`;
+      }
+      updateSwapModalEstimates();
+    }
+
+    function updateSwapModalEstimates() {
+      const positions = (allData.portfolio && allData.portfolio.positions) || {};
+      const pos = positions[selectedTicker] || {};
+      const price = pos.price_usd || 100.0;
+      const usdcVal = (positions.USDC && positions.USDC.usd_value) || 0;
+      const stockVal = pos.usd_value || 0;
+
+      const amtInput = document.getElementById('swap-amount-input');
+      const amt = parseFloat(amtInput.value) || 0;
+
+      if (swapDirection === 'BUY') {
+        document.getElementById('swap-avail-bal').textContent = `$${usdcVal.toFixed(2)} USDC`;
+        const shares = (amt / price).toFixed(3);
+        document.getElementById('swap-est-shares').textContent = `~${shares} $${selectedTicker}`;
+      } else {
+        document.getElementById('swap-avail-bal').textContent = `$${stockVal.toFixed(2)} ($${selectedTicker})`;
+        document.getElementById('swap-est-shares').textContent = `~$${amt.toFixed(2)} USDC`;
+      }
+    }
+
+    function setQuickAmount(amt) {
+      document.getElementById('swap-amount-input').value = amt;
+      updateSwapModalEstimates();
+    }
+
+    function setQuickAmountMax() {
+      const positions = (allData.portfolio && allData.portfolio.positions) || {};
+      const pos = positions[selectedTicker] || {};
+      const usdcVal = (positions.USDC && positions.USDC.usd_value) || 0;
+      const stockVal = pos.usd_value || 0;
+
+      const maxAmt = swapDirection === 'BUY' ? usdcVal : stockVal;
+      document.getElementById('swap-amount-input').value = Math.floor(maxAmt);
+      updateSwapModalEstimates();
+    }
+
+    async function executeDirectSwap() {
+      if (!connectedWallet) {
+        showToast("Please connect your wallet first.");
+        openWalletModal();
+        return;
+      }
+
+      const amt = parseFloat(document.getElementById('swap-amount-input').value);
+      if (!amt || amt <= 0) {
+        showToast("Please enter a valid amount.");
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-direct-swap');
+      btn.disabled = true;
+      btn.textContent = 'Submitting Jupiter Swap...';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/trade`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet_address: connectedWallet,
+            ticker: selectedTicker,
+            direction: swapDirection,
+            amount_usd: amt
+          })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast(`⚡ Confirmed! Swapped ${data.swap.from_symbol} → ${data.swap.to_symbol} ($${amt})`);
+          closeDirectSwapModal();
+          await loadData();
+        } else {
+          showToast(data.detail || "Swap rejected");
+        }
+      } catch (e) {
+        showToast("Trade error: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Confirm Swap via Wallet';
+      }
     }
 
     // ── Inspector Drawer with Direct Article Links ──
@@ -719,11 +974,9 @@
       });
     }
 
-    // ── Model A: Non-Custodial Client Wallet Signing Flow ──
+    // ── Basket Rebalance Review Modal Flow ──
     async function initiateRebalanceFlow() {
       const wallet = connectedWallet || '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
-      
-      // Calculate pending action
       const targets = allData.target_weights || {};
       const positions = (allData.portfolio && allData.portfolio.positions) || {};
       
@@ -783,7 +1036,7 @@
         showToast('Execution error: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.textContent = '⚡ Rebalance Jupiter';
+        btn.textContent = '⚡ Auto-Rebalance Basket';
       }
     }
 

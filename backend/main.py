@@ -170,12 +170,11 @@ def root():
 
 @app.get("/api/portfolio")
 def get_portfolio_endpoint(wallet: Optional[str] = None):
-    portfolio = get_current_portfolio()
+    portfolio = get_current_portfolio(wallet)
     sentiments = get_all_stock_sentiment()
     sentiment_map = {t: sentiments[t]["compound_score"] for t in sentiments}
     target_weights = compute_target_allocation(sentiment_map)
     
-    # If user passed custom wallet, resolve display name
     user_info = None
     if wallet:
         user_info = get_or_create_wallet_user(wallet)
@@ -188,25 +187,49 @@ def get_portfolio_endpoint(wallet: Optional[str] = None):
         "user_profile": user_info
     }
 
-@app.get("/api/scores")
-def get_scores_endpoint(refresh: bool = False):
-    scores = get_all_stock_sentiment(force_refresh=refresh)
-    return {"scores": scores}
+class DirectTradeRequest(BaseModel):
+    wallet_address: str
+    ticker: str
+    direction: str  # 'BUY' or 'SELL'
+    amount_usd: float
 
-@app.get("/api/prices")
-def get_prices_endpoint():
-    prices = fetch_live_stock_prices()
-    return {"prices": prices}
+@app.post("/api/trade")
+def trade_stock_endpoint(req: DirectTradeRequest):
+    """
+    Direct user swap: Trade USDC <-> Selected Stock on Solana via Jupiter.
+    Updates wallet holdings and registers swap in user profile.
+    """
+    from rebalance import execute_direct_stock_swap
+    res = execute_direct_stock_swap(
+        wallet_address=req.wallet_address.strip(),
+        ticker=req.ticker.strip(),
+        direction=req.direction.upper(),
+        amount_usd=req.amount_usd
+    )
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Trade failed"))
+
+    swap = res.get("swap")
+    if swap:
+        record_wallet_swap(
+            req.wallet_address.strip(),
+            swap["tx_hash"],
+            swap["from_symbol"],
+            swap["to_symbol"],
+            swap["amount_usd"]
+        )
+
+    return res
 
 @app.post("/api/rebalance")
 def rebalance_endpoint(req: Optional[RebalanceRequest] = None):
     threshold = req.threshold if req else 0.03
+    wallet = req.wallet_address if req else None
     sentiments = get_all_stock_sentiment()
     sentiment_map = {t: sentiments[t]["compound_score"] for t in sentiments}
     
-    rebalance_result = run_rebalance(sentiment_map, threshold=threshold)
+    rebalance_result = run_rebalance(sentiment_map, wallet_address=wallet, threshold=threshold)
     
-    # If wallet address provided, record swaps to profile
     if req and req.wallet_address:
         for s in rebalance_result.get("swaps", []):
             record_wallet_swap(
