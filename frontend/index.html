@@ -441,7 +441,7 @@
   <script>
     const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:8000'
-      : '';
+      : 'https://sentiment-meter-production.up.railway.app';
 
     let allData = { portfolio: {}, target_weights: {}, sentiment_scores: {} };
     let selectedTicker = 'NVDA';
