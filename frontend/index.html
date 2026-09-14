@@ -3,231 +3,359 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sentiment Meter — AI Sentiment Analysis</title>
+  <title>Solana xStock Rebalance Bot — AI Sentiment Driven Portfolio</title>
   <link rel="stylesheet" href="style.css">
-  <meta name="description" content="AI-powered sentiment & emotion analysis for any public figure or topic.">
+  <meta name="description" content="AI Sentiment-Powered Rebalance Bot for xStocks on Solana. Ingests real-time news, Pyth price feeds, and executes DEX swaps via Jupiter.">
 </head>
 <body>
 
 <nav>
-  <a href="/" class="logo"><span>Sentiment</span>Meter</a>
+  <a href="/" class="logo"><span>Solana</span>xStock Bot</a>
   <div class="nav-links">
-    <a href="/app">Try Demo</a>
-    <a href="#features">How It Works</a>
-    <a href="#pricing">Pricing</a>
-    <a href="/dashboard" class="btn">Dashboard</a>
+    <span class="solana-pill">⚡ Solana Devnet/Mainnet</span>
+    <a href="#demo-controls">Hackathon Demo</a>
+    <a href="#sentiment-grid">Signals</a>
+    <a href="#portfolio-view">Portfolio</a>
+    <a href="/app" class="btn">Single Analyzer</a>
   </div>
 </nav>
 
 <div class="container">
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero-badge">✨ Real-time AI News Sentiment & Emotion Engine</div>
-    <h1>What's the <span class="gradient">pulse</span> on anyone?</h1>
-    <p>Type any name or topic — get instant AI polarity scoring, emotion breakdown, and article-level insight from 100+ news articles.</p>
-    
-    <div class="search-box">
-      <input type="text" id="hero-search" placeholder="e.g. Elon Musk, Taylor Swift, OpenAI..." onkeypress="if(event.key==='Enter') goAnalyze()">
-      <button onclick="goAnalyze()">Analyze →</button>
-    </div>
-    
-    <div class="demo-note">
-      🔍 <strong>Free demo</strong> — instant scan, no account needed. 3 free full scans when you sign up.
-    </div>
+  <!-- Hero Section -->
+  <section class="hero" style="padding: 4rem 1rem 2.5rem;">
+    <div class="hero-badge">🏆 Solana Hackathon — Sentiment-Powered xStock Rebalance Bot</div>
+    <h1>Automated <span class="gradient">xStock Rebalancing</span> on Solana</h1>
+    <p>
+      Continuous sentiment intelligence scanning Google News RSS, pricing assets via Pyth, 
+      and executing optimal portfolio rebalances via Jupiter DEX into Solana equities &amp; USDC.
+    </p>
 
-    <div class="stat-chips">
-      <div class="stat-chip">
-        <div class="num">100+</div>
-        <div class="label">Articles / Scan</div>
-      </div>
-      <div class="stat-chip">
-        <div class="num">8</div>
-        <div class="label">Emotions Detected</div>
-      </div>
-      <div class="stat-chip">
-        <div class="num">VADER</div>
-        <div class="label">NLP Polarity</div>
-      </div>
+    <div style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+      <button class="btn-rebalance-giant" id="main-rebalance-btn" onclick="triggerRebalance()">
+        <span>⚡ Execute Jupiter Rebalance</span>
+      </button>
+      <button class="btn-outline" style="padding:0.9rem 1.8rem;" onclick="refreshAll()">
+        ↻ Refresh Feeds
+      </button>
     </div>
   </section>
 
-  <!-- Live Demo Results -->
-  <div id="hero-results"></div>
+  <!-- Hackathon Interactive Judge Demo Trigger -->
+  <section class="hackathon-box" id="demo-controls">
+    <h3 style="font-size:1.15rem; margin-bottom:0.4rem; display:flex; align-items:center; gap:0.5rem;">
+      <span>🧪</span> Interactive Judge Demo Script
+    </h3>
+    <p style="color:var(--text2); font-size:0.88rem; max-width:700px;">
+      Simulate breaking news events in real time. Watch the sentiment score collapse or surge, 
+      observe the calculated target weights adapt, and execute the Jupiter rotation into USDC / winning stocks.
+    </p>
 
-  <!-- How it works -->
-  <section id="features" style="padding: 4rem 0 2rem;">
-    <div class="section-title">
-      <h2>How It Works</h2>
-      <p>Instant sentiment intelligence powered by real-time NLP</p>
-    </div>
-    <div class="how-grid">
-      <div class="how-card">
-        <div class="step-num">01</div>
-        <div class="icon">🔍</div>
-        <h3>Search Any Subject</h3>
-        <p>Enter any public figure, company, product, or trending event currently in the news.</p>
-      </div>
-      <div class="how-card">
-        <div class="step-num">02</div>
-        <div class="icon">🤖</div>
-        <h3>AI Sentiment Scan</h3>
-        <p>Our engine scrapes 100+ live news sources, evaluating polarity and 8 core emotional dimensions.</p>
-      </div>
-      <div class="how-card">
-        <div class="step-num">03</div>
-        <div class="icon">📊</div>
-        <h3>Visual Dashboard</h3>
-        <p>Receive a clear polarity score, emotion distribution chart, and article-level breakdown.</p>
-      </div>
+    <div class="scenario-pills">
+      <button class="scenario-btn negative-trigger" onclick="runScenario('TSLA', 'Tesla announces massive 2M vehicle recall over critical safety flaw', false)">
+        <span>🔴</span> TSLA Recall (-55% Drop)
+      </button>
+      <button class="scenario-btn positive-trigger" onclick="runScenario('NVDA', 'NVIDIA surges 15% as new Blackwell AI chip orders shatter historic records', true)">
+        <span>🟢</span> NVDA AI Boom (+65% Surge)
+      </button>
+      <button class="scenario-btn negative-trigger" onclick="runScenario('AAPL', 'Apple iPhone sales hit severe regulatory blockage and revenue declines', false)">
+        <span>🔴</span> AAPL Antitrust Slump
+      </button>
+      <button class="scenario-btn" onclick="resetScenarios()">
+        <span>🔄</span> Reset to Pure Live News
+      </button>
     </div>
   </section>
 
-  <!-- Pricing -->
-  <section class="pricing" id="pricing">
-    <div class="section-title">
-      <h2>Simple Credit Pricing</h2>
-      <p>Pay as you go. No monthly commitments required.</p>
+  <!-- Portfolio & Allocation Overview -->
+  <section class="terminal-panel" id="portfolio-view">
+    <div class="terminal-header">
+      <div>
+        <h2 style="font-size:1.4rem; font-weight:700; letter-spacing:-0.02em;">Solana Portfolio Valuation</h2>
+        <p style="color:var(--text2); font-size:0.85rem; margin-top:0.2rem;">
+          Wallet: <span id="wallet-key" style="font-family:'JetBrains Mono', monospace; color:var(--cyan);">Loading...</span>
+        </p>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.8rem;">
+        <span class="badge-tag live" id="bot-status">BOT ACTIVE</span>
+        <span class="badge-tag oracle">PYTH ORACLE</span>
+        <span class="badge-tag jupiter">JUPITER DEX</span>
+      </div>
     </div>
-    
-    <div class="pricing-grid">
-      <div class="plan-card">
-        <h3>Starter</h3>
-        <div class="price">$5</div>
-        <div class="desc">10 full sentiment scans</div>
-        <a href="/dashboard" class="btn">Get Started</a>
+
+    <!-- Portfolio Balance Metrics -->
+    <div class="credits-display" style="margin-bottom:1.5rem;">
+      <div>
+        <div class="info">Total Value (USDC)</div>
+        <span class="big-num" id="total-val">$0.00</span>
       </div>
-      
-      <div class="plan-card featured">
-        <div class="plan-badge">Popular</div>
-        <h3>Pro</h3>
-        <div class="price">$20</div>
-        <div class="desc">50 full sentiment scans</div>
-        <a href="/dashboard" class="btn">Get Started</a>
+      <div style="border-left: 1px solid var(--border); padding-left: 2rem;">
+        <div class="info">Anchor Cash (USDC)</div>
+        <span class="big-num" id="usdc-bal" style="font-size:2.6rem; color:var(--text);">$0.00</span>
       </div>
-      
-      <div class="plan-card">
-        <h3>Unlimited</h3>
-        <div class="price">$50<span style="font-size:1rem; color:var(--text3);">/mo</span></div>
-        <div class="desc">Unlimited monthly scans</div>
-        <a href="dashboard.html" class="btn">Get Started</a>
+      <div style="border-left: 1px solid var(--border); padding-left: 2rem;">
+        <div class="info">Last Rebalance</div>
+        <span class="big-num" id="last-rebalance-time" style="font-size:1.8rem; color:var(--text2);">Just now</span>
       </div>
+    </div>
+
+    <!-- Dynamic Allocation Comparison: Current vs Sentiment Target -->
+    <h3 style="font-size:0.95rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); margin-top:1.5rem;">
+      Asset Allocations: Current Weight (Purple) vs Sentiment Target (Green)
+    </h3>
+    <div class="allocation-comparison" id="allocation-rows">
+      <div style="text-align:center; padding:2rem;"><div class="spinner"></div></div>
     </div>
   </section>
+
+  <!-- Live Sentiment Signals Grid -->
+  <section style="margin: 3rem 0;" id="sentiment-grid">
+    <div class="section-title" style="text-align:left; margin-bottom:1.5rem;">
+      <h2>Real-Time Sentiment Signals (Google News RSS + VADER)</h2>
+      <p>Scored NLP polarity, 8-dimensional emotion profiles, and latest scanned headlines</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:1.2rem;" id="stock-cards-grid">
+      <div style="text-align:center; padding:3rem;"><div class="spinner"></div></div>
+    </div>
+  </section>
+
+  <!-- Live Jupiter Transactions History -->
+  <section class="terminal-panel" style="margin-top:3rem;">
+    <div class="terminal-header">
+      <h2 style="font-size:1.3rem; font-weight:700;">On-Chain Jupiter Swap Executions</h2>
+      <span style="font-size:0.8rem; color:var(--text3); font-family:'JetBrains Mono', monospace;">Solana Network</span>
+    </div>
+
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Trade</th>
+          <th>USD Value</th>
+          <th>Route</th>
+          <th>Status</th>
+          <th>Solana Explorer</th>
+        </tr>
+      </thead>
+      <tbody id="tx-table-body">
+        <tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text3);">No rebalances executed yet.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
 </div>
 
 <footer>
-  <p>Sentiment Meter — Powered by VADER & Lexicon NLP · <a href="https://github.com/kasperwtrcolor/sentiment-meter" target="_blank">GitHub</a></p>
+  <p>Solana Hackathon: Sentiment-Powered xStock Rebalance Bot · Jupiter v1 DEX Routing · Pyth Oracle · VADER NLP</p>
 </footer>
 
 <div id="toast" class="toast"></div>
 
 <script>
-const API_BASE = 'https://sentiment-meter-production.up.railway.app';
+// Point directly to Railway or local backend
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8000'
+  : 'https://sentiment-meter-production.up.railway.app';
 
-function goAnalyze() {
-  const name = document.getElementById('hero-search').value.trim();
-  if (!name) return;
-  const resultsDiv = document.getElementById('hero-results');
-  resultsDiv.innerHTML = '<div style="text-align:center; padding:3rem;"><div class="spinner"></div><p style="color:var(--text2); margin-top:1rem; font-size:0.9rem;">Scanning 100+ news articles...</p></div>';
-  
-  fetch(API_BASE + '/analyze/demo', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ person: name })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.error) { resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Error: ${data.error}</p></div>`; return; }
-    resultsDiv.innerHTML = renderResults(data);
-  })
-  .catch(err => {
-    resultsDiv.innerHTML = `<div class="sentiment-card"><p style="color:var(--red);">Could not reach server. Is the backend running?</p><p style="color:var(--text2); font-size:0.85rem; margin-top:0.5rem;">${err.message}</p></div>`;
-  });
+let currentPortfolio = null;
+let currentSentiments = {};
+
+async function fetchPortfolioData() {
+  try {
+    const res = await fetch(`${API_BASE}/api/portfolio`);
+    const data = await res.json();
+    currentPortfolio = data.portfolio;
+    currentSentiments = data.sentiment_scores || {};
+    
+    renderPortfolioUI(data);
+    renderSignalsUI(currentSentiments, data.target_weights || {});
+  } catch (err) {
+    console.error("Portfolio fetch error:", err);
+  }
 }
 
-function renderResults(data) {
-  const s = data.summary;
-  const label = s.sentiment_label || 'Neutral';
-  const cls = label.includes('Positive') ? '🟢' : label.includes('Negative') ? '🔴' : '🟡';
-  const color = label.includes('Positive') ? '#10b981' : label.includes('Negative') ? '#ef4444' : '#f59e0b';
-  const barPct = ((s.avg_compound + 1) / 2 * 100).toFixed(1);
+function renderPortfolioUI(data) {
+  const p = data.portfolio;
+  const targets = data.target_weights || {};
   
-  let emotionsHtml = '';
-  if (s.top_emotions && Object.keys(s.top_emotions).length > 0) {
-    const emojis = {joy:'😊', anger:'😡', sadness:'😢', fear:'😨', surprise:'😲', trust:'🤝', anticipation:'🔮', disgust:'🤢'};
-    const maxEmo = Math.max(...Object.values(s.top_emotions));
-    emotionsHtml = '<div class="emotions"><h3>🧠 Emotion Profile</h3>';
-    for (const [emo, score] of Object.entries(s.top_emotions)) {
-      const pct = maxEmo > 0 ? (score / maxEmo * 100).toFixed(0) : 0;
-      emotionsHtml += `
-        <div class="emotion-row">
-          <span class="emoji">${emojis[emo] || '❓'}</span>
-          <span class="name">${emo.charAt(0).toUpperCase() + emo.slice(1)}</span>
-          <div class="bar"><div class="bar-inner" style="width:${pct}%"></div></div>
-          <span class="pct">${score}%</span>
-        </div>`;
-    }
-    emotionsHtml += '</div>';
+  document.getElementById("wallet-key").textContent = data.wallet_public_key.substring(0, 8) + "..." + data.wallet_public_key.substring(data.wallet_public_key.length - 8);
+  document.getElementById("total-val").textContent = "$" + (p.total_value_usd || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  
+  const usdcVal = p.positions && p.positions.USDC ? p.positions.USDC.usd_value : 0;
+  document.getElementById("usdc-bal").textContent = "$" + usdcVal.toLocaleString(undefined, {minimumFractionDigits: 2});
+  
+  if (p.last_rebalance_ts) {
+    const d = new Date(p.last_rebalance_ts * 1000);
+    document.getElementById("last-rebalance-time").textContent = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
   }
 
-  let headlinesHtml = '';
-  if (data.results && data.results.length > 0) {
-    headlinesHtml = '<div class="headlines"><h3>📰 Sample Headlines</h3>';
-    const sorted = [...data.results].sort((a,b) => Math.abs(b.compound) - Math.abs(a.compound));
-    sorted.forEach(r => {
-      const c = r.compound >= 0.05 ? '🟢' : r.compound <= -0.05 ? '🔴' : '🟡';
-      const cc = r.compound >= 0.05 ? '#10b981' : r.compound <= -0.05 ? '#ef4444' : '#f59e0b';
-      headlinesHtml += `
-        <div class="headline-item">
-          <span style="color:${cc}; font-weight:700; font-family:'JetBrains Mono', monospace; font-size:0.85rem;">${c} ${r.compound >= 0 ? '+' : ''}${r.compound.toFixed(2)}</span>
-          <span class="source">${r.source}</span>
-          <div class="text">${r.text.substring(0, 150)}${r.text.length > 150 ? '...' : ''}</div>
-        </div>`;
-    });
-    headlinesHtml += '</div>';
-  }
+  // Render Allocation Rows
+  const container = document.getElementById("allocation-rows");
+  container.innerHTML = "";
 
-  return `
-    <div class="sentiment-card">
-      <div class="sentiment-header">
-        <h2>${data.person}</h2>
-        <span class="sentiment-badge" style="background:${color}22; color:${color}; border:1px solid ${color}44;">${cls} ${label}</span>
-      </div>
-      <div class="sentiment-bar">
-        <span style="color:var(--red); font-size:0.78rem; font-weight:500;">Negative</span>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${barPct}%; background: ${color}; color:${color}"></div>
+  for (const [sym, pos] of Object.entries(p.positions)) {
+    const currPct = Math.round((pos.current_weight || 0) * 100);
+    const tgtPct = Math.round((targets[sym] !== undefined ? targets[sym] : pos.current_weight) * 100);
+    const delta = tgtPct - currPct;
+    const deltaColor = delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : 'var(--text3)';
+    const deltaSign = delta > 0 ? '+' : '';
+
+    container.innerHTML += `
+      <div class="alloc-row">
+        <div class="alloc-ticker">
+          <span>${sym === 'USDC' ? '💵' : '📈'}</span> ${sym}
         </div>
-        <span style="color:var(--green); font-size:0.78rem; font-weight:500;">Positive</span>
-        <span class="bar-value">${s.avg_compound >= 0 ? '+' : ''}${s.avg_compound.toFixed(2)}</span>
+        <div class="alloc-price">$${pos.price_usd || 1.0}</div>
+        <div class="alloc-bars">
+          <div class="dual-bar-track">
+            <div class="bar-current" style="width: ${Math.min(currPct, 100)}%;"></div>
+          </div>
+          <div class="dual-bar-track">
+            <div class="bar-target" style="width: ${Math.min(tgtPct, 100)}%;"></div>
+          </div>
+        </div>
+        <div class="alloc-meta">
+          <div>Curr: <strong>${currPct}%</strong> | Tgt: <strong>${tgtPct}%</strong></div>
+          <div style="color:${deltaColor}; font-size:0.72rem; margin-top:2px;">Target Delta: ${deltaSign}${delta}%</div>
+        </div>
       </div>
-      <div class="stats-grid">
-        <div class="stat-card positive"><span class="num">${s.pct_positive}%</span><span class="label">Positive</span></div>
-        <div class="stat-card neutral"><span class="num">${s.pct_neutral}%</span><span class="label">Neutral</span></div>
-        <div class="stat-card negative"><span class="num">${s.pct_negative}%</span><span class="label">Negative</span></div>
-      </div>
-      ${sourcesHtml(s)}
-      ${emotionsHtml}
-      ${headlinesHtml}
-      <div style="margin-top:1.5rem; font-size:0.85rem; color:var(--text2); text-align:center; padding-top:1rem; border-top:1px solid var(--border-subtle);">
-        📡 Analyzed ${s.total} articles · Want detailed reports &amp; history? 
-        <a href="/dashboard" style="color:var(--cyan); font-weight:600; margin-left:0.3rem;">Get Your Free API Key →</a>
-      </div>
-    </div>`;
+    `;
+  }
+
+  // Render Swaps
+  if (p.history && p.history.length > 0) {
+    const tbody = document.getElementById("tx-table-body");
+    tbody.innerHTML = "";
+    p.history.slice(0, 8).forEach(tx => {
+      tbody.innerHTML += `
+        <tr>
+          <td style="font-size:0.8rem; color:var(--text3);">${new Date(tx.timestamp * 1000).toLocaleTimeString()}</td>
+          <td><strong>${tx.from_symbol} → ${tx.to_symbol}</strong></td>
+          <td style="font-family:'JetBrains Mono', monospace;">$${tx.amount_usd}</td>
+          <td><span class="badge-tag jupiter">Jupiter Route</span></td>
+          <td><span class="badge-tag live">CONFIRMED</span></td>
+          <td>
+            <a href="${tx.solscan_url}" target="_blank" class="tx-pill">
+              ${tx.tx_hash.substring(0, 10)}...${tx.tx_hash.substring(tx.tx_hash.length - 6)} ↗
+            </a>
+          </td>
+        </tr>
+      `;
+    });
+  }
 }
 
-function sourcesHtml(s) {
-  if (!s.sources) return '';
-  const entries = Object.entries(s.sources).slice(0, 5);
-  return `<div style="margin:0.8rem 0; font-size:0.8rem; color:var(--text3);">📡 Top Sources: ${entries.map(([src, cnt]) => `${src} (${cnt})`).join(' · ')}</div>`;
+function renderSignalsUI(scores, targets) {
+  const grid = document.getElementById("stock-cards-grid");
+  grid.innerHTML = "";
+
+  for (const [sym, s] of Object.entries(scores)) {
+    const scoreVal = s.compound_score || 0.0;
+    const scoreColor = scoreVal > 0.05 ? '#10b981' : scoreVal < -0.05 ? '#ef4444' : '#f59e0b';
+    const tgt = targets[sym] !== undefined ? Math.round(targets[sym] * 100) : 20;
+
+    grid.innerHTML += `
+      <div class="glass-card" style="padding:1.5rem; border-top: 3px solid ${scoreColor};">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <h3 style="font-size:1.2rem; font-weight:700;">${sym}</h3>
+            <div style="font-size:0.78rem; color:var(--text3);">${s.name || sym}</div>
+          </div>
+          <span class="badge-tag" style="background:${scoreColor}22; color:${scoreColor}; border:1px solid ${scoreColor}55;">
+            ${s.sentiment_label || 'Neutral'}
+          </span>
+        </div>
+
+        <div style="display:flex; align-items:baseline; gap:0.5rem; margin: 1rem 0 0.5rem;">
+          <span style="font-size:2rem; font-weight:800; font-family:'JetBrains Mono', monospace; color:${scoreColor};">
+            ${scoreVal >= 0 ? '+' : ''}${scoreVal.toFixed(2)}
+          </span>
+          <span style="font-size:0.8rem; color:var(--text3);">Polarity [-1 to +1]</span>
+        </div>
+
+        <div style="font-size:0.82rem; margin-bottom:1rem;">
+          Target Allocation: <strong style="color:var(--cyan); font-family:'JetBrains Mono', monospace;">${tgt}%</strong>
+        </div>
+
+        <div style="background:var(--bg3); border-radius:8px; padding:0.8rem; font-size:0.8rem; line-height:1.4; border:1px solid var(--border-subtle);">
+          <div style="font-size:0.68rem; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.2rem;">
+            ${s.sample_source || 'News Source'}
+          </div>
+          "${s.sample_headline || 'Market analysis in progress.'}"
+        </div>
+      </div>
+    `;
+  }
+}
+
+async function triggerRebalance() {
+  const btn = document.getElementById("main-rebalance-btn");
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="width:1.2rem; height:1.2rem; border-width:2px;"></div> Rebalancing via Jupiter...`;
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/rebalance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    const data = await res.json();
+    
+    if (data.swaps_executed > 0) {
+      showToast(`✅ Executed ${data.swaps_executed} Jupiter swaps! Portfolio rebalanced.`, "success");
+    } else {
+      showToast(`⚡ Portfolio already optimized. Within deviation threshold.`, "success");
+    }
+    
+    await fetchPortfolioData();
+  } catch (e) {
+    showToast("Rebalance error: " + e.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<span>⚡ Execute Jupiter Rebalance</span>`;
+  }
+}
+
+async function runScenario(ticker, headline, isPositive) {
+  showToast(`Injecting breaking event for ${ticker}...`, "success");
+  try {
+    await fetch(`${API_BASE}/api/simulate-news`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticker, headline, is_positive: isPositive })
+    });
+    showToast(`🚨 Signal shifted for ${ticker}! Review new target weights.`, "success");
+    await fetchPortfolioData();
+  } catch (e) {
+    showToast("Scenario trigger failed", "error");
+  }
+}
+
+async function resetScenarios() {
+  try {
+    await fetch(`${API_BASE}/api/reset-news`, { method: "POST" });
+    showToast("Reset to live Google News signals.", "success");
+    await fetchPortfolioData();
+  } catch (e) {
+    showToast("Reset failed", "error");
+  }
+}
+
+function refreshAll() {
+  showToast("Updating feeds and prices...", "success");
+  fetchPortfolioData();
 }
 
 function showToast(msg, type='') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast ' + type + ' show';
-  setTimeout(() => t.classList.remove('show'), 3000);
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
+
+// Initial load
+fetchPortfolioData();
+// Poll every 15s for live updates
+setInterval(fetchPortfolioData, 15000);
 </script>
 </body>
 </html>

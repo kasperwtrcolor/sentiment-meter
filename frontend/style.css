@@ -1042,3 +1042,247 @@ footer a:hover { color: var(--cyan); }
 @media (max-width: 480px) {
   .stat-chips { flex-direction: column; gap: 0.8rem; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Solana Hackathon xStock Rebalance Terminal UI Styles
+   ═══════════════════════════════════════════════════════ */
+
+.solana-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(20, 241, 149, 0.1);
+  border: 1px solid rgba(20, 241, 149, 0.3);
+  color: #14f195;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+.terminal-panel {
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.8rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-card);
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.badge-tag {
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.badge-tag.live {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-tag.oracle {
+  background: rgba(124, 58, 237, 0.15);
+  color: #c4b5fd;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.badge-tag.jupiter {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Allocation Bar Comparison */
+.allocation-comparison {
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.alloc-row {
+  display: grid;
+  grid-template-columns: 80px 100px 1fr 140px;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.alloc-ticker {
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.alloc-price {
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.alloc-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dual-bar-track {
+  height: 8px;
+  background: var(--bg3);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-current {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+.bar-target {
+  height: 100%;
+  background: #10b981;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+.alloc-meta {
+  font-size: 0.78rem;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+  color: var(--text2);
+}
+
+/* Hackathon Interactive News Trigger Box */
+.hackathon-box {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(6, 182, 212, 0.08));
+  border: 1px solid rgba(124, 58, 237, 0.28);
+  border-radius: var(--radius);
+  padding: 1.8rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hackathon-box::before {
+  content: 'HACKATHON DEMO CONTROLS';
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 0.65rem;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.scenario-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.scenario-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.scenario-btn:hover {
+  background: var(--bg3);
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+}
+
+.scenario-btn.negative-trigger:hover {
+  border-color: var(--red);
+  color: #fca5a5;
+}
+
+.scenario-btn.positive-trigger:hover {
+  border-color: var(--green);
+  color: #86efac;
+}
+
+/* Big Action Rebalance Button */
+.btn-rebalance-giant {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 1rem 2.2rem;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btn-rebalance-giant:hover {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  box-shadow: 0 6px 30px rgba(16, 185, 129, 0.45);
+  transform: translateY(-2px);
+}
+
+.btn-rebalance-giant:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Solscan Tx Row */
+.tx-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--cyan);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: var(--transition);
+}
+
+.tx-pill:hover {
+  text-decoration: underline;
+  color: var(--accent2);
+}

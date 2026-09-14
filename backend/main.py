@@ -1,9 +1,11 @@
 """
-Sentiment Meter — FastAPI Backend
+Sentiment-Powered Solana xStock Rebalance Bot — Backend API.
+Combines Google News RSS NLP sentiment signals, real-time Pyth & market feeds,
+Jupiter DEX automated routing, and portfolio target weight allocation.
 """
 import os
 import sys
-from typing import Optional
+from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Header, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,8 +17,13 @@ sys.path.insert(0, os.path.dirname(__file__))
 from database import init_db, get_user_by_api_key, deduct_credit, record_scan, get_scan_history, find_or_create_user
 from sentiment import analyze
 from stripe_service import create_checkout_session, handle_checkout_completed, verify_webhook
+from price_service import fetch_live_stock_prices
+from stock_sentiment import get_all_stock_sentiment, inject_breaking_news, reset_breaking_news
+from rebalance import get_current_portfolio, run_rebalance, compute_target_allocation
+from jupiter_service import get_jupiter_quote, DEFAULT_WALLET_PUBKEY
+from stocks import STOCKS, USDC
 
-app = FastAPI(title="Sentiment Meter API", version="1.0.0")
+app = FastAPI(title="Sentiment-Powered Solana xStock Rebalance Bot API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,7 +40,7 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:8001")
 def startup():
     init_db()
 
-# ── Models ──
+# ── Pydantic Request Models ──
 class AnalyzeRequest(BaseModel):
     person: str
 
@@ -45,7 +52,15 @@ class CheckoutRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: str
 
-# ── Auth helper ──
+class RebalanceRequest(BaseModel):
+    threshold: Optional[float] = 0.03
+
+class SimulateNewsRequest(BaseModel):
+    ticker: str
+    headline: str
+    is_positive: Optional[bool] = False
+
+# ── Auth helper (Backward compatible) ──
 def require_user(api_key: str = Header(None, alias="X-API-Key")):
     if not api_key:
         raise HTTPException(status_code=401, detail="Missing X-API-Key header")
@@ -54,15 +69,134 @@ def require_user(api_key: str = Header(None, alias="X-API-Key")):
         raise HTTPException(status_code=401, detail="Invalid API key")
     return user
 
-# ── Endpoints ──
+# ══════════════════════════════════════════════════════════════════════════
+# NEW HACKATHON APIs: Solana xStock Rebalancing & Sentiment Architecture
+# ══════════════════════════════════════════════════════════════════════════
 
 @app.get("/")
 def root():
-    return {"name": "Sentiment Meter API", "version": "1.0.0", "docs": "/docs"}
+    return {
+        "name": "Sentiment-Powered Solana xStock Rebalance Bot API",
+        "version": "2.0.0",
+        "network": "Solana",
+        "dex_router": "Jupiter v1",
+        "oracle": "Pyth Hermes Network",
+        "docs": "/docs",
+        "endpoints": {
+            "portfolio": "/api/portfolio",
+            "scores": "/api/scores",
+            "prices": "/api/prices",
+            "rebalance": "/api/rebalance",
+            "simulate_news": "/api/simulate-news",
+            "quote": "/api/quote"
+        }
+    }
+
+@app.get("/api/portfolio")
+def get_portfolio_endpoint():
+    """
+    Returns live valued Solana portfolio:
+    Balances, current prices, current weights, and recommended target weights.
+    """
+    portfolio = get_current_portfolio()
+    sentiments = get_all_stock_sentiment()
+    sentiment_map = {t: sentiments[t]["compound_score"] for t in sentiments}
+    target_weights = compute_target_allocation(sentiment_map)
+    
+    return {
+        "portfolio": portfolio,
+        "target_weights": target_weights,
+        "sentiment_scores": sentiments,
+        "wallet_public_key": portfolio.get("wallet_address", DEFAULT_WALLET_PUBKEY)
+    }
+
+@app.get("/api/scores")
+def get_scores_endpoint(refresh: bool = False):
+    """
+    Returns live sentiment signals across the stock basket (TSLA, AAPL, NVDA, MSFT, GOOGL).
+    """
+    scores = get_all_stock_sentiment(force_refresh=refresh)
+    return {"scores": scores}
+
+@app.get("/api/prices")
+def get_prices_endpoint():
+    """
+    Returns real-time Pyth & equity market prices for all basket assets and USDC.
+    """
+    prices = fetch_live_stock_prices()
+    return {"prices": prices}
+
+@app.post("/api/rebalance")
+def rebalance_endpoint(req: Optional[RebalanceRequest] = None):
+    """
+    Executes Solana xStock rebalancing:
+    1. Evaluates sentiment weights.
+    2. Identifies deviations > threshold.
+    3. Executes swaps on Jupiter DEX.
+    4. Records confirmation and tx hash.
+    """
+    threshold = req.threshold if req else 0.03
+    sentiments = get_all_stock_sentiment()
+    sentiment_map = {t: sentiments[t]["compound_score"] for t in sentiments}
+    
+    rebalance_result = run_rebalance(sentiment_map, threshold=threshold)
+    return rebalance_result
+
+@app.post("/api/simulate-news")
+def simulate_news_endpoint(req: SimulateNewsRequest):
+    """
+    Hackathon Demo Trigger:
+    Simulates breaking news to demonstrate live sentiment shift and automatic rebalancing.
+    Example: TSLA recall or NVDA record earnings.
+    """
+    ticker = req.ticker.upper()
+    if ticker not in STOCKS:
+        raise HTTPException(status_code=400, detail=f"Invalid ticker: {ticker}. Valid: {list(STOCKS.keys())}")
+    
+    news_res = inject_breaking_news(ticker, req.headline, req.is_positive)
+    
+    # Auto recalculate target weights
+    sentiments = get_all_stock_sentiment()
+    sentiment_map = {t: sentiments[t]["compound_score"] for t in sentiments}
+    targets = compute_target_allocation(sentiment_map)
+
+    return {
+        "success": True,
+        "injected": news_res,
+        "updated_sentiment": sentiments[ticker],
+        "new_target_weights": targets
+    }
+
+@app.post("/api/reset-news")
+def reset_news_endpoint(ticker: Optional[str] = None):
+    """Resets injected news back to pure organic Google News signals."""
+    reset_breaking_news(ticker.upper() if ticker else None)
+    return {"success": True, "message": "Simulated news cleared"}
+
+@app.get("/api/quote")
+def quote_endpoint(from_token: str, to_token: str, amount_usd: float = 100.0):
+    """
+    Returns real-time swap route and price impact from Jupiter aggregator.
+    """
+    from_mint = STOCKS.get(from_token, {}).get("mint") or USDC["mint"]
+    to_mint = STOCKS.get(to_token, {}).get("mint") or USDC["mint"]
+    amount_units = int(amount_usd * 1_000_000)
+    
+    quote = get_jupiter_quote(from_mint, to_mint, amount_units)
+    return {
+        "from": from_token,
+        "to": to_token,
+        "amount_usd": amount_usd,
+        "quote": quote
+    }
+
+# ══════════════════════════════════════════════════════════════════════════
+# EXISTING BACKWARD-COMPATIBLE ENDPOINTS (Analyze, Demo, Auth, Credits)
+# ══════════════════════════════════════════════════════════════════════════
 
 @app.post("/analyze")
 def analyze_endpoint(req: AnalyzeRequest, user: dict = Depends(require_user)):
-    """Run sentiment analysis on a person. Costs 1 credit."""
+    """Run sentiment analysis on any subject. Costs 1 credit."""
     ok, updated_user = deduct_credit(user["api_key"])
     if not ok:
         return JSONResponse(
@@ -71,7 +205,6 @@ def analyze_endpoint(req: AnalyzeRequest, user: dict = Depends(require_user)):
         )
     
     result = analyze(req.person)
-    
     if "error" in result:
         return JSONResponse(status_code=500, content=result)
     
@@ -90,7 +223,7 @@ def analyze_endpoint(req: AnalyzeRequest, user: dict = Depends(require_user)):
 
 @app.post("/analyze/demo")
 def analyze_demo(req: AnalyzeRequest):
-    """Free demo — no auth required, limited results."""
+    """Free demo — no auth required, returns real live NLP analysis."""
     result = analyze(req.person)
     if "error" in result:
         return JSONResponse(status_code=500, content=result)
@@ -110,11 +243,9 @@ def get_history(user: dict = Depends(require_user)):
     history = get_scan_history(user["api_key"])
     return {"history": history}
 
-# ── Checkout / Stripe ──
-
 @app.post("/signup")
 def signup(req: SignupRequest):
-    """Create a new account with 3 free credits."""
+    """Create or retrieve API key with free scans."""
     from database import create_user, get_user_by_email
     existing = get_user_by_email(req.email)
     if existing:
