@@ -437,10 +437,11 @@
 
   <div class="toast-msg" id="toast"></div>
 
+  <script src="https://unpkg.com/@solana/web3.js@1.91.4/lib/index.iife.min.js"></script>
   <script>
     const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:8000'
-      : 'https://sentiment-meter-production.up.railway.app';
+      : '';
 
     let allData = { portfolio: {}, target_weights: {}, sentiment_scores: {} };
     let selectedTicker = 'NVDA';
@@ -574,19 +575,14 @@
       const badge = document.getElementById('wallet-badge');
       const heroBtn = document.getElementById('hero-action-btn');
 
-      if (connectedWallet && currentUserProfile) {
+      if (connectedWallet) {
         btn.classList.add('connected');
-        label.textContent = currentUserProfile.display_name;
-        badge.textContent = `User: ${currentUserProfile.display_name} (${connectedWallet.substring(0, 4)}...${connectedWallet.substring(connectedWallet.length - 4)})`;
+        const displayName = currentUserProfile ? currentUserProfile.display_name : (connectedWallet.substring(0, 6) + '...');
+        label.textContent = displayName;
+        badge.textContent = `User: ${displayName}`;
+        
         if (heroBtn) {
-          heroBtn.innerHTML = `<span>View Profile (${currentUserProfile.display_name}) ↗</span>`;
-        }
-      } else if (connectedWallet) {
-        btn.classList.add('connected');
-        label.textContent = connectedWallet.substring(0, 6) + '...' + connectedWallet.substring(connectedWallet.length - 4);
-        badge.textContent = `User: ${connectedWallet.substring(0, 6)}...`;
-        if (heroBtn) {
-          heroBtn.innerHTML = `<span>Wallet Connected ↗</span>`;
+          heroBtn.innerHTML = `<span>Connected: ${displayName} ↗</span>`;
         }
       } else {
         btn.classList.remove('connected');
@@ -854,29 +850,67 @@
 
       const btn = document.getElementById('btn-submit-direct-swap');
       btn.disabled = true;
-      btn.textContent = 'Submitting Jupiter Swap...';
+      btn.textContent = 'Preparing Jupiter Route...';
 
       try {
-        const res = await fetch(`${API_BASE}/api/trade`, {
+        // 1. Prepare Swap via Backend
+        const prepRes = await fetch(`${API_BASE}/api/prepare-swap`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             wallet_address: connectedWallet,
-            ticker: selectedTicker,
-            direction: swapDirection,
+            from_symbol: swapDirection === 'BUY' ? 'USDC' : selectedTicker,
+            to_symbol: swapDirection === 'BUY' ? selectedTicker : 'USDC',
             amount_usd: amt
           })
         });
-        const data = await res.json();
+        const prepData = await prepRes.json();
 
-        if (data.success) {
-          showToast(`⚡ Confirmed! Swapped ${data.swap.from_symbol} → ${data.swap.to_symbol} ($${amt})`);
-          closeDirectSwapModal();
-          await loadData();
-        } else {
-          showToast(data.detail || "Swap rejected");
+        if (prepData.error || !prepData.swap_transaction) {
+          throw new Error(prepData.error || "Failed to generate swap route");
         }
+
+        btn.textContent = 'Awaiting Wallet Approval...';
+
+        // 2. Deserialize Base64 Transaction
+        const swapTransactionBuf = Uint8Array.from(atob(prepData.swap_transaction), c => c.charCodeAt(0));
+        const transaction = solanaWeb3.VersionedTransaction.deserialize(swapTransactionBuf);
+
+        // 3. Sign and Send via Provider
+        let txid;
+        const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com"); // Using public node for broadcasting
+        
+        if (window.solana && window.solana.isPhantom) {
+          const { signature } = await window.solana.signAndSendTransaction(transaction);
+          txid = signature;
+        } else if (window.solflare && window.solflare.isConnected) {
+          const signedTx = await window.solflare.signTransaction(transaction);
+          txid = await connection.sendRawTransaction(signedTx.serialize());
+        } else {
+          throw new Error("No supported wallet connected for signing (Phantom/Solflare required).");
+        }
+
+        btn.textContent = 'Confirming on Solana...';
+
+        // 4. Record Swap on Backend
+        await fetch(`${API_BASE}/api/wallet/record-swap`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet_address: connectedWallet,
+            tx_hash: txid,
+            from_symbol: prepData.from_symbol,
+            to_symbol: prepData.to_symbol,
+            amount_usd: prepData.amount_usd
+          })
+        });
+
+        showToast(`⚡ Confirmed! Swapped ${prepData.from_symbol} → ${prepData.to_symbol} ($${amt})`);
+        closeDirectSwapModal();
+        await loadData();
+
       } catch (e) {
+        console.error(e);
         showToast("Trade error: " + e.message);
       } finally {
         btn.disabled = false;
@@ -1013,24 +1047,85 @@
       closeApprovalModal();
       const btn = document.getElementById('rebalance-btn');
       btn.disabled = true;
-      btn.textContent = 'Broadcasting Solana Swap...';
-
-      showToast("Wallet signed! Broadcasting Jupiter swap to Solana...");
+      btn.textContent = 'Calculating optimal route...';
 
       try {
-        const wallet = (pendingRebalanceData && pendingRebalanceData.wallet) || connectedWallet;
+        if (!connectedWallet) {
+          throw new Error("Wallet not connected");
+        }
+        
+        // 1. Get Trades Needed
         const res = await fetch(`${API_BASE}/api/rebalance`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wallet_address: wallet, threshold: 0.02 })
+          body: JSON.stringify({ wallet_address: connectedWallet, threshold: 0.02 })
         });
-        const data = await res.json();
+        const rebalanceData = await res.json();
+        const trades = rebalanceData.trades_needed || [];
         
-        if (data.swaps_executed > 0) {
-          showToast(`⚡ Confirmed! Executed ${data.swaps_executed} Jupiter swaps.`);
-        } else {
-          showToast('Portfolio in alignment with sentiment targets.');
+        if (trades.length === 0) {
+          showToast('Portfolio already in alignment with sentiment targets.');
+          return;
         }
+
+        let executed = 0;
+        
+        // 2. Execute Each Trade via Wallet Signing
+        for (const trade of trades) {
+          btn.textContent = `Preparing ${trade.action} ${trade.symbol}...`;
+          
+          const prepRes = await fetch(`${API_BASE}/api/prepare-swap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              wallet_address: connectedWallet,
+              from_symbol: trade.action === 'BUY' ? 'USDC' : trade.symbol,
+              to_symbol: trade.action === 'BUY' ? trade.symbol : 'USDC',
+              amount_usd: trade.amount_usd
+            })
+          });
+          const prepData = await prepRes.json();
+          
+          if (prepData.error || !prepData.swap_transaction) {
+            console.error(`Failed to prepare swap for ${trade.symbol}:`, prepData.error);
+            showToast(`Skipped ${trade.symbol}: Liquidity/routing issue`);
+            continue;
+          }
+
+          btn.textContent = `Approve ${trade.symbol} swap...`;
+          
+          const swapTransactionBuf = Uint8Array.from(atob(prepData.swap_transaction), c => c.charCodeAt(0));
+          const transaction = solanaWeb3.VersionedTransaction.deserialize(swapTransactionBuf);
+          
+          let txid;
+          const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+          
+          if (window.solana && window.solana.isPhantom) {
+            const { signature } = await window.solana.signAndSendTransaction(transaction);
+            txid = signature;
+          } else if (window.solflare && window.solflare.isConnected) {
+            const signedTx = await window.solflare.signTransaction(transaction);
+            txid = await connection.sendRawTransaction(signedTx.serialize());
+          } else {
+            throw new Error("No supported wallet connected for signing.");
+          }
+          
+          await fetch(`${API_BASE}/api/wallet/record-swap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              wallet_address: connectedWallet,
+              tx_hash: txid,
+              from_symbol: prepData.from_symbol,
+              to_symbol: prepData.to_symbol,
+              amount_usd: prepData.amount_usd
+            })
+          });
+          
+          executed++;
+        }
+        
+        showToast(`⚡ Confirmed! Executed ${executed} Jupiter swaps.`);
         await loadData();
       } catch (err) {
         showToast('Execution error: ' + err.message);

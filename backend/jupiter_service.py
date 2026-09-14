@@ -1,6 +1,6 @@
 """
 Jupiter Swap Integration for Solana xStocks & USDC.
-Interacts directly with the official Jupiter Swap v1 API (https://api.jup.ag/swap/v1).
+Interacts directly with the official Jupiter Swap v2 API (https://api.jup.ag/swap/v2).
 Supports real live routing, quote computation, and transaction dispatching.
 """
 import urllib.request
@@ -11,7 +11,8 @@ import os
 import hashlib
 from typing import Dict, Any, Optional
 
-JUPITER_API_BASE = "https://api.jup.ag/swap/v1"
+JUPITER_API_BASE = "https://api.jup.ag/swap/v2"
+JUPITER_API_KEY = os.environ.get("JUPITER_API_KEY", "jup_488bca97f6d851e98908d1a7fe18e0b071e5f57ef8441fe384aaf7ed981c756d")
 
 # Demo burner keypair for judge demonstration if no custom private key provided
 DEFAULT_WALLET_PUBKEY = os.environ.get(
@@ -37,8 +38,9 @@ def get_jupiter_quote(
     })
     url = f"{JUPITER_API_BASE}/quote?{params}"
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; SentimentRebalanceBot/1.0)",
-        "Accept": "application/json"
+        "User-Agent": "Mozilla/5.0 (compatible; SentimentRebalanceBot/2.0)",
+        "Accept": "application/json",
+        "x-api-key": JUPITER_API_KEY
     }
 
     try:
@@ -55,7 +57,7 @@ def get_jupiter_quote(
                     "raw_quote": data
                 }
     except Exception as e:
-        # Fallback approximation based on pool spot exchange if direct mint is illiquid or testing
+        print(f"Error fetching Jupiter quote: {e}")
         return {
             "success": False,
             "error": str(e),
@@ -82,7 +84,8 @@ def build_jupiter_swap_tx(
 
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (compatible; SentimentRebalanceBot/1.0)"
+        "User-Agent": "Mozilla/5.0 (compatible; SentimentRebalanceBot/2.0)",
+        "x-api-key": JUPITER_API_KEY
     }
 
     try:
@@ -95,52 +98,9 @@ def build_jupiter_swap_tx(
                 "last_valid_block_height": data.get("lastValidBlockHeight")
             }
     except Exception as e:
-        # Generate simulated signed instruction for hackathon live demo
-        simulated_hash = "4z" + hashlib.sha256(f"{time.time()}_{user_public_key}".encode()).hexdigest()[:62]
+        print(f"Error building Jupiter swap tx: {e}")
         return {
             "success": False,
-            "error": str(e),
-            "simulated_tx_hash": simulated_hash
+            "error": str(e)
         }
 
-def execute_swap(
-    from_symbol: str,
-    to_symbol: str,
-    from_mint: str,
-    to_mint: str,
-    amount_usd: float,
-    unit_price_from: float,
-    unit_price_to: float
-) -> Dict[str, Any]:
-    """
-    High-level swap runner that routes through Jupiter.
-    Computes token amount, fetches quote, builds swap, and produces Solana explorer transaction.
-    """
-    token_in_amount = int((amount_usd / unit_price_from) * 1_000_000)
-    expected_out_amount = int((amount_usd / unit_price_to) * 1_000_000)
-
-    # 1. Fetch real Jupiter quote
-    quote = get_jupiter_quote(from_mint, to_mint, token_in_amount)
-    
-    # 2. Build transaction payload
-    tx_res = build_jupiter_swap_tx(quote)
-
-    # Generate or extract real transaction signature
-    tx_hash = (
-        tx_res.get("swap_transaction")[:64]
-        if tx_res.get("success") and tx_res.get("swap_transaction")
-        else ("5" + hashlib.sha256(f"{from_symbol}_{to_symbol}_{amount_usd}_{time.time()}".encode()).hexdigest()[:87])
-    )
-
-    return {
-        "tx_hash": tx_hash,
-        "solscan_url": f"https://solscan.io/tx/{tx_hash}",
-        "from_symbol": from_symbol,
-        "to_symbol": to_symbol,
-        "amount_usd": round(amount_usd, 2),
-        "amount_in": round(amount_usd / unit_price_from, 4),
-        "amount_out": round(amount_usd / unit_price_to, 4),
-        "dex_route": "Jupiter Routing v1",
-        "status": "CONFIRMED",
-        "timestamp": int(time.time()),
-    }
