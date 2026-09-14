@@ -78,6 +78,7 @@ def build_jupiter_swap_tx(
     payload = json.dumps({
         "quoteResponse": quote_response.get("raw_quote", quote_response),
         "userPublicKey": user_public_key,
+        "taker": user_public_key,
         "wrapAndUnwrapSol": True,
         "prioritizationFeeLamports": "auto"
     }).encode("utf-8")
