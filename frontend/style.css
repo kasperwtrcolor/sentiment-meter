@@ -543,3 +543,361 @@ header.terminal-nav {
 .toast-msg.show {
   display: block;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Landing Page, Wallet Connect & Dynamic Profile Drawer Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Landing Modal / Intro Banner */
+.landing-banner {
+  background: radial-gradient(ellipse 70% 80% at 50% -20%, rgba(34, 197, 94, 0.1) 0%, rgba(20, 241, 149, 0.03) 50%, transparent 100%),
+              linear-gradient(180deg, #101217 0%, var(--bg-black) 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem 2.2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideInDown 0.4s ease-out;
+}
+
+.landing-grid-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.landing-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.landing-left h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin-bottom: 0.4rem;
+}
+
+.landing-left h1 span.glow-green {
+  background: linear-gradient(135deg, #4ade80, #14f195);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.landing-left p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.landing-features-row {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.feat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+}
+
+.feat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulseGlow 2s infinite;
+}
+
+/* User Wallet Connect Button in Navbar */
+.wallet-btn-nav {
+  background: #1e222b;
+  border: 1px solid #2e3442;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.wallet-btn-nav:hover {
+  background: #252a35;
+  border-color: #3f475a;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.wallet-btn-nav.connected {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--green-text);
+}
+
+.wallet-avatar-mini {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  display: inline-block;
+}
+
+/* Wallet Approval Modal (Model A Client-Side Signing) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-dialog {
+  background: #111318;
+  border: 1px solid #282d38;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 440px;
+  padding: 1.8rem;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  position: relative;
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.25s ease;
+}
+
+.modal-backdrop.open .modal-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
+  color: #fff;
+}
+
+.wallet-provider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 1.2rem 0;
+}
+
+.wallet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #171a21;
+  border: 1px solid #232732;
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wallet-option:hover {
+  background: #1d222b;
+  border-color: #3a4153;
+  transform: translateX(3px);
+}
+
+.wallet-option-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wallet-option-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* User Profile Modal / Drawer */
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+}
+
+.profile-avatar-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #06b6d4, #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  border: 2px solid #2e3442;
+}
+
+.profile-handle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: var(--font-mono);
+}
+
+.profile-wallet-sub {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+.profile-stat-box {
+  background: #171a21;
+  border: 1px solid #242934;
+  border-radius: 8px;
+  padding: 0.8rem;
+}
+
+.profile-stat-lbl {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.profile-stat-val {
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: #fff;
+  margin-top: 0.15rem;
+}
+
+/* Model A: Live Approval Prompt Card */
+.approval-prompt-box {
+  background: #181d26;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  animation: pulseCard 2s infinite alternate;
+}
+
+.approval-btn-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.btn-approve-primary {
+  flex: 1;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-approve-primary:hover {
+  background: #22c55e;
+}
+
+.btn-reject-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-reject-outline:hover {
+  color: #fff;
+  border-color: var(--text-dim);
+}
+
+/* Clickable headline links */
+.news-link-item {
+  color: var(--text-main);
+  text-decoration: none;
+  display: block;
+  transition: color 0.15s;
+}
+
+.news-link-item:hover {
+  color: var(--green-text);
+  text-decoration: underline;
+}
+
+.news-outlink-icon {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-left: 0.25rem;
+}
+
+/* Animations */
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+@keyframes pulseCard {
+  from { border-color: rgba(34, 197, 94, 0.2); }
+  to { border-color: rgba(34, 197, 94, 0.5); }
+}

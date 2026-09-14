@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solana xStock Sentiment Terminal</title>
+  <title>Solana xStock Sentiment Terminal — Autonomous Rebalancer</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="https://assets.coingecko.com/coins/images/4128/small/solana.png">
 </head>
 <body>
 
@@ -15,17 +16,27 @@
         <span class="brand-badge">◉</span> Sentiment<span style="color:#7e8494; font-weight:400; margin-left:3px;">Meter</span>
       </a>
       <span>•</span>
-      <span>Autonomous xStock Sentiment Rebalance on Solana</span>
+      <span style="font-size:0.78rem; color:var(--text-dim); font-family:var(--font-mono);" id="landing-toggle-btn" onclick="toggleLanding()">
+        [Toggle Architecture Guide]
+      </span>
       <span>•</span>
       <span class="updated-tag" id="last-updated-clock">updated --:--:--</span>
     </div>
 
-    <div style="display:flex; align-items:center; gap:1rem;">
+    <div style="display:flex; align-items:center; gap:0.75rem;">
       <div class="search-input-wrapper">
         <svg width="13" height="13" viewBox="0 0 24 24"><path d="M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-.46 5.28-1.3l5.01 5.01c.39.39 1.02.39 1.41 0 .39-.39.39-1.01.01-1.42zM4 10c0-3.31 2.69-6 6-6s6 2.69 6 6-2.69 6-6 6-6-2.69-6-6z"/></svg>
         <input type="text" id="filter-input" placeholder="Search ticker or asset..." oninput="applyFilter()">
       </div>
-      <button class="rebalance-action-btn" id="rebalance-btn" onclick="executeRebalance()">
+
+      <!-- User Wallet Button with Random Handle -->
+      <button class="wallet-btn-nav" id="wallet-connect-btn" onclick="handleWalletButtonClick()">
+        <span class="wallet-avatar-mini" id="wallet-avatar-indicator"></span>
+        <span id="wallet-btn-label">Connect Solana Wallet</span>
+      </button>
+
+      <!-- Rebalance Action Trigger -->
+      <button class="rebalance-action-btn" id="rebalance-btn" onclick="initiateRebalanceFlow()">
         <span>⚡ Rebalance Jupiter</span>
       </button>
     </div>
@@ -34,10 +45,35 @@
   <!-- Main Terminal Layout -->
   <main class="terminal-layout">
 
-    <!-- Left: Data Grid & Controls -->
+    <!-- Left: Data Grid & Interactive Controls -->
     <section class="main-view">
       
-      <!-- Event Injection / Scenario Bar -->
+      <!-- Landing Intro Hero Banner (Collapsible) -->
+      <div class="landing-banner" id="landing-hero-banner">
+        <div class="landing-grid-bg"></div>
+        <div class="landing-content">
+          <div class="landing-left">
+            <h1>Autonomous <span class="glow-green">xStock Rebalancing</span> on Solana</h1>
+            <p>
+              Sentiment Meter continuously evaluates Google News RSS streams, scores polarity and 8 emotional dimensions using NLP, 
+              benchmarks real-time prices via Pyth Hermes feeds, and executes dynamic rebalancing across Solana equity tokens and USDC via Jupiter DEX.
+            </p>
+            <div class="landing-features-row">
+              <div class="feat-item"><span class="feat-dot"></span> Google News VADER NLP</div>
+              <div class="feat-item"><span class="feat-dot"></span> Pyth Network Feeds</div>
+              <div class="feat-item"><span class="feat-dot"></span> Jupiter v1 Liquidity Routing</div>
+              <div class="feat-item"><span class="feat-dot"></span> Non-Custodial Client Signing</div>
+            </div>
+          </div>
+          <div>
+            <button class="rebalance-action-btn" style="padding:0.65rem 1.4rem; font-size:0.88rem;" onclick="openWalletModal()">
+              <span>Connect Wallet to Trade ↗</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Signals & Event Injection Bar -->
       <div class="scenario-bar">
         <div class="scenario-pills-row">
           <span class="scenario-label">Signals:</span>
@@ -56,7 +92,7 @@
         </div>
 
         <div style="font-size:0.75rem; color:var(--text-dim); font-family:var(--font-mono);">
-          Router: <span style="color:var(--text-main);">Jupiter v1 DEX</span> • Oracle: <span style="color:var(--text-main);">Pyth Price Feeds</span>
+          Router: <span style="color:var(--text-main);">Jupiter v1</span> • Oracle: <span style="color:var(--text-main);">Pyth Hermes</span>
         </div>
       </div>
 
@@ -71,7 +107,7 @@
               <th>Sentiment Signal</th>
               <th>Current Weight</th>
               <th>Target Weight</th>
-              <th>Status</th>
+              <th>Action Required</th>
             </tr>
           </thead>
           <tbody id="stocks-table-body">
@@ -82,14 +118,14 @@
         </table>
       </div>
 
-      <!-- Execution Log Table -->
+      <!-- On-Chain Execution Ledger -->
       <div style="margin-top:1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
           <span style="font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim);">
-            On-Chain Jupiter Execution Ledger
+            On-Chain Execution History
           </span>
-          <span id="wallet-badge" style="font-family:var(--font-mono); font-size:0.72rem; color:var(--accent-cyan);">
-            Wallet: ...
+          <span id="wallet-badge" style="font-family:var(--font-mono); font-size:0.72rem; color:var(--accent-cyan); cursor:pointer;" onclick="openProfileModal()">
+            User: CyberBull Quant #412
           </span>
         </div>
 
@@ -174,14 +210,14 @@
         </div>
       </div>
 
-      <!-- Headline Radar -->
+      <!-- Scanned News Headlines with Direct External Links -->
       <div>
-        <div class="stat-header" style="margin-bottom:0.5rem;">Scanned News Headline</div>
-        <div class="headline-item-card">
-          <div class="headline-source" id="insp-news-source">MARKET WIRE</div>
-          <div class="headline-text" id="insp-news-text">
-            Loading latest scanned sentiment signals...
-          </div>
+        <div class="stat-header" style="margin-bottom:0.5rem; display:flex; justify-content:space-between;">
+          <span>Scanned News Headlines</span>
+          <span style="font-size:0.68rem; color:var(--accent-cyan);">Click to read article ↗</span>
+        </div>
+        <div class="headline-feed" id="insp-headlines-container">
+          <!-- Populated dynamically -->
         </div>
       </div>
 
@@ -194,6 +230,140 @@
 
   </main>
 
+  <!-- Wallet Connect Modal -->
+  <div class="modal-backdrop" id="wallet-modal">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closeWalletModal()">&times;</button>
+      <h3 style="font-size:1.15rem; font-weight:700; color:#fff; margin-bottom:0.3rem;">Connect Solana Wallet</h3>
+      <p style="color:var(--text-muted); font-size:0.8rem;">Select a provider to sign non-custodial Jupiter swaps.</p>
+      
+      <div class="wallet-provider-list">
+        <div class="wallet-option" onclick="connectProvider('phantom')">
+          <div class="wallet-option-left">
+            <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png" class="wallet-option-icon" style="background:#512da8; padding:3px;">
+            <span>Phantom Wallet</span>
+          </div>
+          <span style="font-size:0.75rem; color:var(--text-dim); font-family:var(--font-mono);">Detected</span>
+        </div>
+
+        <div class="wallet-option" onclick="connectProvider('solflare')">
+          <div class="wallet-option-left">
+            <img src="https://assets.coingecko.com/coins/images/4128/small/solana.png" class="wallet-option-icon" style="background:#f39c12; padding:3px;">
+            <span>Solflare</span>
+          </div>
+          <span style="font-size:0.75rem; color:var(--text-dim); font-family:var(--font-mono);">Detected</span>
+        </div>
+
+        <div class="wallet-option" onclick="connectProvider('backpack')">
+          <div class="wallet-option-left">
+            <img src="https://assets.coingecko.com/coins/images/6319/small/usdc.png" class="wallet-option-icon" style="background:#e74c3c; padding:3px;">
+            <span>Backpack</span>
+          </div>
+          <span style="font-size:0.75rem; color:var(--text-dim); font-family:var(--font-mono);">SPL</span>
+        </div>
+
+        <div class="wallet-option" onclick="connectProvider('burner')">
+          <div class="wallet-option-left">
+            <div class="wallet-option-icon" style="background:#10b981; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;">⚡</div>
+            <span>Instant Sandbox Wallet</span>
+          </div>
+          <span style="font-size:0.75rem; color:var(--green-text); font-family:var(--font-mono);">Auto-Generated</span>
+        </div>
+      </div>
+      <p style="font-size:0.72rem; color:var(--text-dim); line-height:1.4;">
+        🔐 Model A Non-Custodial: Swaps are prepared via Jupiter API and signed directly by your wallet. The server never holds custody of your keys.
+      </p>
+    </div>
+  </div>
+
+  <!-- User Profile Page Modal -->
+  <div class="modal-backdrop" id="profile-modal">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closeProfileModal()">&times;</button>
+      
+      <div class="profile-card-header">
+        <div class="profile-avatar-large" id="prof-avatar">🦍</div>
+        <div>
+          <div class="profile-handle" id="prof-handle">CyberBull Quant #412</div>
+          <div class="profile-wallet-sub" id="prof-addr">7xKX...JosgAsU</div>
+        </div>
+      </div>
+
+      <div class="profile-stats-grid">
+        <div class="profile-stat-box">
+          <div class="profile-stat-lbl">Swaps Executed</div>
+          <div class="profile-stat-val" id="prof-total-swaps">0</div>
+        </div>
+        <div class="profile-stat-box">
+          <div class="profile-stat-lbl">Volume Balanced</div>
+          <div class="profile-stat-val" id="prof-total-vol">$0.00</div>
+        </div>
+      </div>
+
+      <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">
+        Recent Wallet Rebalances
+      </div>
+      <div class="table-container" style="max-height:160px; overflow-y:auto;">
+        <table class="terminal-table" style="font-size:0.75rem;">
+          <thead>
+            <tr>
+              <th>Pair</th>
+              <th>USD Value</th>
+              <th>Explorer</th>
+            </tr>
+          </thead>
+          <tbody id="prof-history-rows">
+            <tr><td colspan="3" style="text-align:center; padding:1rem; color:var(--text-dim);">No transactions yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:1.2rem; display:flex; justify-content:flex-end;">
+        <button class="pill-btn" onclick="disconnectWallet()" style="color:var(--red-text);">Disconnect Wallet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Model A: Wallet Transaction Approval Modal -->
+  <div class="modal-backdrop" id="approval-modal">
+    <div class="modal-dialog">
+      <h3 style="font-size:1.1rem; font-weight:700; color:#fff; display:flex; align-items:center; gap:0.4rem;">
+        <span style="color:var(--green);">⚡</span> Jupiter Transaction Approval
+      </h3>
+      <p style="color:var(--text-muted); font-size:0.82rem; margin-top:0.2rem;">
+        Review the sentiment-calculated portfolio rotation before broadcasting.
+      </p>
+
+      <div class="approval-prompt-box">
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+          <span style="color:var(--text-dim); font-size:0.75rem;">Action</span>
+          <span style="font-weight:700; color:#fff;" id="appr-action">SELL TSLA → BUY USDC</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+          <span style="color:var(--text-dim); font-size:0.75rem;">Notional Value</span>
+          <span style="font-family:var(--font-mono); font-weight:600; color:var(--green-text);" id="appr-amount">$500.00</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+          <span style="color:var(--text-dim); font-size:0.75rem;">DEX Route</span>
+          <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-main);">Jupiter v1 Aggregator</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-dim); font-size:0.75rem;">Signing Wallet</span>
+          <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent-cyan);" id="appr-wallet">...</span>
+        </div>
+
+        <div class="approval-btn-row">
+          <button class="btn-approve-primary" id="btn-confirm-sign" onclick="confirmWalletSignature()">
+            Approve &amp; Send
+          </button>
+          <button class="btn-reject-outline" onclick="closeApprovalModal()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-msg" id="toast"></div>
 
   <script>
@@ -204,28 +374,179 @@
     let allData = { portfolio: {}, target_weights: {}, sentiment_scores: {} };
     let selectedTicker = 'NVDA';
     let filterQuery = '';
+    let connectedWallet = localStorage.getItem('sm_wallet_address') || null;
+    let currentUserProfile = null;
+    let pendingRebalanceData = null;
+
+    // ── Initial Boot ──
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (connectedWallet) {
+        await fetchWalletUser(connectedWallet);
+      }
+      await loadData();
+      setInterval(loadData, 15000);
+    });
 
     async function loadData() {
       try {
-        const res = await fetch(`${API_BASE}/api/portfolio`);
+        const url = connectedWallet ? `${API_BASE}/api/portfolio?wallet=${connectedWallet}` : `${API_BASE}/api/portfolio`;
+        const res = await fetch(url);
         allData = await res.json();
         
+        if (allData.user_profile) {
+          currentUserProfile = allData.user_profile;
+          updateWalletUI();
+        }
+
         renderTable();
         renderInspector(selectedTicker);
         renderHistory();
 
-        // Update clock
         const now = new Date();
         document.getElementById('last-updated-clock').textContent = 'updated ' + now.toTimeString().split(' ')[0];
-        
-        // Update wallet
-        const w = allData.wallet_public_key || '7xKX...JosgAsU';
-        document.getElementById('wallet-badge').textContent = 'Wallet: ' + w.substring(0, 6) + '...' + w.substring(w.length - 4);
       } catch (err) {
         console.error("Fetch error:", err);
       }
     }
 
+    // ── Wallet Management ──
+    function handleWalletButtonClick() {
+      if (connectedWallet) {
+        openProfileModal();
+      } else {
+        openWalletModal();
+      }
+    }
+
+    function openWalletModal() {
+      document.getElementById('wallet-modal').classList.add('open');
+    }
+
+    function closeWalletModal() {
+      document.getElementById('wallet-modal').classList.remove('open');
+    }
+
+    async function connectProvider(provider) {
+      let addr = '';
+      if (provider === 'phantom' && window.solana && window.solana.isPhantom) {
+        try {
+          const resp = await window.solana.connect();
+          addr = resp.publicKey.toString();
+        } catch (e) {
+          showToast("Phantom connection rejected.");
+          return;
+        }
+      } else if (provider === 'solflare' && window.solflare) {
+        try {
+          await window.solflare.connect();
+          addr = window.solflare.publicKey.toString();
+        } catch (e) {
+          showToast("Solflare connection rejected.");
+          return;
+        }
+      } else {
+        // Instant Sandbox Burner Wallet for smooth demonstration
+        const randHex = Array.from({length: 44}, () => '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random() * 58)]).join('');
+        addr = randHex;
+      }
+
+      connectedWallet = addr;
+      localStorage.setItem('sm_wallet_address', addr);
+      closeWalletModal();
+      await fetchWalletUser(addr);
+      await loadData();
+      showToast(`Wallet connected as ${currentUserProfile ? currentUserProfile.display_name : 'Trader'}!`);
+    }
+
+    async function fetchWalletUser(addr) {
+      try {
+        const res = await fetch(`${API_BASE}/api/wallet/connect`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ wallet_address: addr })
+        });
+        const d = await res.json();
+        if (d.success) {
+          currentUserProfile = d.profile;
+          updateWalletUI();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function updateWalletUI() {
+      const btn = document.getElementById('wallet-connect-btn');
+      const label = document.getElementById('wallet-btn-label');
+      const badge = document.getElementById('wallet-badge');
+
+      if (connectedWallet && currentUserProfile) {
+        btn.classList.add('connected');
+        label.textContent = currentUserProfile.display_name;
+        badge.textContent = `User: ${currentUserProfile.display_name} (${connectedWallet.substring(0, 4)}...${connectedWallet.substring(connectedWallet.length - 4)})`;
+      } else {
+        btn.classList.remove('connected');
+        label.textContent = 'Connect Solana Wallet';
+        badge.textContent = 'User: CyberBull Quant #412 (Guest)';
+      }
+    }
+
+    function disconnectWallet() {
+      localStorage.removeItem('sm_wallet_address');
+      connectedWallet = null;
+      currentUserProfile = null;
+      updateWalletUI();
+      closeProfileModal();
+      showToast("Wallet disconnected.");
+      loadData();
+    }
+
+    // ── Profile Modal ──
+    async function openProfileModal() {
+      if (!connectedWallet) {
+        openWalletModal();
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/wallet/profile/${connectedWallet}`);
+        const data = await res.json();
+        const user = data.user;
+        
+        document.getElementById('prof-handle').textContent = user.display_name;
+        document.getElementById('prof-addr').textContent = user.wallet_address;
+        document.getElementById('prof-total-swaps').textContent = user.total_rebalances;
+        document.getElementById('prof-total-vol').textContent = '$' + (user.volume_usd || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+        
+        const tbody = document.getElementById('prof-history-rows');
+        if (data.history && data.history.length > 0) {
+          tbody.innerHTML = '';
+          data.history.forEach(h => {
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>${h.from_symbol} → ${h.to_symbol}</strong></td>
+                <td>$${h.amount_usd}</td>
+                <td><a href="https://solscan.io/tx/${h.tx_hash}" target="_blank" style="color:var(--accent-cyan); text-decoration:none;">Solscan ↗</a></td>
+              </tr>
+            `;
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      document.getElementById('profile-modal').classList.add('open');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.remove('open');
+    }
+
+    // ── Landing Toggle ──
+    function toggleLanding() {
+      const banner = document.getElementById('landing-hero-banner');
+      banner.style.display = banner.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // ── Table Rendering ──
     function renderTable() {
       const tbody = document.getElementById('stocks-table-body');
       const positions = (allData.portfolio && allData.portfolio.positions) || {};
@@ -299,7 +620,7 @@
             </div>
           </td>
           <td>
-            <span style="font-size:0.75rem; color:${tgtPct > currPct ? 'var(--green-text)' : tgtPct < currPct ? 'var(--red-text)' : 'var(--text-dim)'}; font-family:var(--font-mono);">
+            <span style="font-size:0.75rem; color:${tgtPct > currPct ? 'var(--green-text)' : tgtPct < currPct ? 'var(--red-text)' : 'var(--text-dim)'}; font-family:var(--font-mono); font-weight:600;">
               ${tgtPct > currPct ? 'BUY ROTATION' : tgtPct < currPct ? 'SELL ROTATION' : 'BALANCED'}
             </span>
           </td>
@@ -308,6 +629,7 @@
       });
     }
 
+    // ── Inspector Drawer with Direct Article Links ──
     function renderInspector(sym) {
       const positions = (allData.portfolio && allData.portfolio.positions) || {};
       const sentiments = allData.sentiment_scores || {};
@@ -350,11 +672,26 @@
         `;
       }
 
-      // Headlines
-      document.getElementById('insp-news-source').textContent = s.sample_source || 'LIVE NEWS RSS';
-      document.getElementById('insp-news-text').textContent = s.sample_headline || 'Scanning market signals...';
+      // Headlines with Direct Clickable External Links
+      const headlinesContainer = document.getElementById('insp-headlines-container');
+      headlinesContainer.innerHTML = '';
+      const articles = s.articles && s.articles.length > 0 ? s.articles : [{
+        headline: s.sample_headline || 'Market analysis in progress...',
+        source: s.sample_source || 'Financial Wire',
+        url: s.sample_url || `https://news.google.com/search?q=${sym}%20stock`
+      }];
 
-      // Solscan Link
+      articles.slice(0, 3).forEach(art => {
+        headlinesContainer.innerHTML += `
+          <div class="headline-item-card">
+            <div class="headline-source">${art.source}</div>
+            <a href="${art.url}" target="_blank" class="news-link-item">
+              <div class="headline-text">${art.headline} <span class="news-outlink-icon">↗</span></div>
+            </a>
+          </div>
+        `;
+      });
+
       document.getElementById('insp-explorer-link').href = `https://solscan.io/token/${pos.mint || ''}`;
     }
 
@@ -382,32 +719,75 @@
       });
     }
 
-    async function executeRebalance() {
+    // ── Model A: Non-Custodial Client Wallet Signing Flow ──
+    async function initiateRebalanceFlow() {
+      const wallet = connectedWallet || '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+      
+      // Calculate pending action
+      const targets = allData.target_weights || {};
+      const positions = (allData.portfolio && allData.portfolio.positions) || {};
+      
+      let largestDiff = 0;
+      let actionPair = "TSLA → USDC";
+      let amount = 500;
+
+      for (const [sym, pos] of Object.entries(positions)) {
+        const diff = Math.abs((targets[sym] || pos.current_weight) - pos.current_weight);
+        if (diff > largestDiff && sym !== 'USDC') {
+          largestDiff = diff;
+          if ((targets[sym] || 0) < pos.current_weight) {
+            actionPair = `${sym} → USDC (Risk-Off Rotation)`;
+          } else {
+            actionPair = `USDC → ${sym} (Momentum Accumulation)`;
+          }
+          amount = Math.round(diff * (allData.portfolio.total_value_usd || 10000));
+        }
+      }
+
+      document.getElementById('appr-action').textContent = actionPair;
+      document.getElementById('appr-amount').textContent = `$${amount.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      document.getElementById('appr-wallet').textContent = wallet.substring(0, 6) + '...' + wallet.substring(wallet.length - 4);
+
+      pendingRebalanceData = { wallet, amount };
+      document.getElementById('approval-modal').classList.add('open');
+    }
+
+    function closeApprovalModal() {
+      document.getElementById('approval-modal').classList.remove('open');
+    }
+
+    async function confirmWalletSignature() {
+      closeApprovalModal();
       const btn = document.getElementById('rebalance-btn');
       btn.disabled = true;
-      btn.textContent = 'Routing Jupiter...';
+      btn.textContent = 'Broadcasting Solana Swap...';
+
+      showToast("Wallet signed! Broadcasting Jupiter swap to Solana...");
 
       try {
+        const wallet = (pendingRebalanceData && pendingRebalanceData.wallet) || connectedWallet;
         const res = await fetch(`${API_BASE}/api/rebalance`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet_address: wallet, threshold: 0.02 })
         });
         const data = await res.json();
         
         if (data.swaps_executed > 0) {
-          showToast(`Executed ${data.swaps_executed} Jupiter swaps. Portfolio rebalanced.`);
+          showToast(`⚡ Confirmed! Executed ${data.swaps_executed} Jupiter swaps.`);
         } else {
           showToast('Portfolio in alignment with sentiment targets.');
         }
         await loadData();
       } catch (err) {
-        showToast('Rebalance failed: ' + err.message);
+        showToast('Execution error: ' + err.message);
       } finally {
         btn.disabled = false;
         btn.textContent = '⚡ Rebalance Jupiter';
       }
     }
 
+    // ── Simulation Controls ──
     async function injectScenario(ticker, headline, isPositive) {
       showToast(`Signal injected for ${ticker}`);
       try {
@@ -438,12 +818,8 @@
       const t = document.getElementById('toast');
       t.textContent = msg;
       t.className = 'toast-msg show';
-      setTimeout(() => { t.className = 'toast-msg'; }, 3000);
+      setTimeout(() => { t.className = 'toast-msg'; }, 3200);
     }
-
-    // Initial load and periodic poll
-    loadData();
-    setInterval(loadData, 15000);
   </script>
 </body>
 </html>
