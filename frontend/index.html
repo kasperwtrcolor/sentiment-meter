@@ -2,132 +2,1371 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solana xStock Sentiment Terminal — Autonomous Rebalancer</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JungleMind — The thinking engine shaped for what counts.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="https://assets.coingecko.com/coins/images/4128/small/solana.png">
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+       DESIGN TOKENS & RESET
+       ═══════════════════════════════════════════════════════════════ */
+    :root {
+      --ink: #111111;
+      --muted: #5c5c5c;
+      --card: rgba(248, 248, 246, 0.97);
+      --shell: 1120px;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --bg: #eef2ee;
+      --font-body: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      --font-mono: "SF Mono", "Fira Code", Monaco, Consolas, monospace;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --green: #15803d;
+      --green-bg: #dcfce7;
+      --red: #b91c1c;
+      --red-bg: #fee2e2;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    body.menu-open {
+      overflow: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       3. BACKGROUND VIDEO — NO OVERLAY
+       ═══════════════════════════════════════════════════════════════ */
+    .hero {
+      position: relative;
+      height: 100vh;
+      height: 100svh;
+      min-height: 620px;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero__bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      animation: fade-in 1.15s var(--ease) both;
+    }
+
+    .hero__bg video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+    }
+
+    .hero__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       5. NAV BAR
+       ═══════════════════════════════════════════════════════════════ */
+    .nav {
+      position: relative;
+      z-index: 70;
+      width: 100%;
+      max-width: var(--shell);
+      margin: 0 auto;
+      padding: 26px 24px 0;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 25px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .brand svg {
+      width: 30px;
+      height: 30px;
+      display: block;
+    }
+
+    .nav__nav {
+      display: flex;
+      align-items: center;
+    }
+
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: 42px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav__links a {
+      font-size: 15px;
+      font-weight: 400;
+      color: #1a1a1a;
+      text-decoration: none;
+      opacity: 0.9;
+      transition: opacity 0.18s ease;
+      cursor: pointer;
+    }
+
+    .nav__links a:hover {
+      opacity: 0.55;
+    }
+
+    .nav__cta {
+      justify-self: end;
+    }
+
+    .btn-dark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #141414;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14.5px;
+      font-weight: 500;
+      padding: 13px 22px;
+      border: 0;
+      border-radius: 9px;
+      white-space: nowrap;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.18s ease, transform 0.18s ease;
+    }
+
+    .btn-dark:hover {
+      background: #000;
+      transform: translateY(-1px);
+    }
+
+    /* Specificity rule to prevent in-panel CTA leak on wide screens */
+    .nav .menu__cta {
+      display: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       6. HAMBURGER BUTTON
+       ═══════════════════════════════════════════════════════════════ */
+    .nav__toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      margin-right: -10px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .nav__toggle-box {
+      position: relative;
+      display: block;
+      width: 22px;
+      height: 14px;
+    }
+
+    .nav__toggle .bar {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 1.8px;
+      border-radius: 2px;
+      background: #141414;
+      transition: transform 0.55s var(--ease), width 0.45s var(--ease);
+    }
+
+    .bar--top {
+      top: 0;
+    }
+
+    .bar--bot {
+      bottom: 0;
+      width: 70%;
+    }
+
+    .nav__toggle:hover .bar--bot {
+      width: 100%;
+    }
+
+    .nav__toggle[aria-expanded="true"] .bar--top {
+      transform: translateY(6.1px) rotate(45deg);
+    }
+
+    .nav__toggle[aria-expanded="true"] .bar--bot {
+      width: 100%;
+      transform: translateY(-6.1px) rotate(-45deg);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       7. CENTRE STACK (STAGE)
+       ═══════════════════════════════════════════════════════════════ */
+    .stage {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      gap: clamp(18px, 2.4vh, 26px);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      border-radius: 999px;
+      padding: 7px 16px 7px 8px;
+      font-size: 13.5px;
+      color: #4a4a4a;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+    }
+
+    .badge__tag {
+      background: #141414;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 500;
+      border-radius: 999px;
+      padding: 3px 12px;
+    }
+
+    h1.headline {
+      margin: 0;
+      font-size: clamp(32px, 5.7vw, 72px);
+      line-height: 1.03;
+      font-weight: 500;
+      letter-spacing: -0.035em;
+      max-width: 20ch;
+      color: var(--ink);
+    }
+
+    p.sub {
+      margin: 0;
+      font-size: clamp(14px, 1.35vw, 17.5px);
+      line-height: 1.65;
+      font-weight: 400;
+      color: var(--muted);
+      max-width: 66ch;
+    }
+
+    .brk {
+      display: none;
+    }
+
+    @media (min-width: 900px) {
+      .brk {
+        display: inline;
+      }
+      .stage .headline {
+        max-width: none;
+      }
+      .stage .sub {
+        max-width: none;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       8. PROMPT CARD (frosted glass)
+       ═══════════════════════════════════════════════════════════════ */
+    .prompt {
+      width: min(790px, 100%);
+      background: rgba(255, 255, 255, 0.42);
+      -webkit-backdrop-filter: blur(18px) saturate(1.15);
+      backdrop-filter: blur(18px) saturate(1.15);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 20px;
+      padding: 22px 20px 16px;
+      text-align: left;
+      box-shadow: 0 18px 44px -26px rgba(0, 0, 0, 0.28);
+      margin-top: clamp(6px, 1.6vh, 16px);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .prompt__input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      resize: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 16.5px;
+      line-height: 1.5;
+      color: var(--ink);
+      min-height: clamp(56px, 11vh, 108px);
+      padding: 2px 4px;
+    }
+
+    .prompt__input::placeholder {
+      color: #3d3d3d;
+      opacity: 0.72;
+    }
+
+    .prompt__bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .prompt__right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: #fff;
+      color: #1a1a1a;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.18s ease;
+    }
+
+    .icon-btn:hover {
+      background: #f1f1ef;
+    }
+
+    .icon-btn--bare {
+      border: 0;
+      background: transparent;
+      width: 34px;
+    }
+
+    .icon-btn--bare:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .icon-btn--send {
+      background: #141414;
+      border-color: #141414;
+      color: #fff;
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+    }
+
+    .icon-btn--send:hover {
+      background: #000;
+    }
+
+    .icon-btn svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    .icon-btn--send svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       9. ENTRANCE ANIMATIONS
+       ═══════════════════════════════════════════════════════════════ */
+    @keyframes rise {
+      from { opacity: 0; transform: translate3d(0, 18px, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .rise {
+      animation: rise 0.9s var(--ease) both;
+      animation-delay: calc(var(--i, 0) * 70ms);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       10. MOBILE MENU RESPONSIVENESS
+       ═══════════════════════════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px 0;
+      }
+      .brand, .nav__toggle {
+        position: relative;
+        z-index: 80;
+      }
+      .brand {
+        font-size: 21px;
+        margin-right: auto;
+      }
+      .brand svg {
+        width: 25px;
+        height: 25px;
+      }
+      .btn-dark {
+        padding: 11px 17px;
+        font-size: 13.5px;
+      }
+      .nav__toggle {
+        display: inline-flex;
+      }
+      .nav__nav {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 30px;
+        padding: 92px 28px 46px;
+        background: #fafbf9;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-12px);
+        transition: opacity 0.45s var(--ease), transform 0.45s var(--ease), visibility 0s linear 0.45s;
+      }
+      .nav__nav.is-open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        transition: opacity 0.6s var(--ease), transform 0.6s var(--ease), visibility 0s linear 0s;
+      }
+      .nav__links {
+        flex-direction: column;
+        gap: 2px;
+        width: 100%;
+        max-width: 340px;
+      }
+      .nav__links li {
+        overflow: hidden;
+      }
+      .nav__links a {
+        display: block;
+        padding: 9px 0;
+        text-align: center;
+        font-size: clamp(26px, 7.4vw, 34px);
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        opacity: 0;
+        transform: translateY(115%);
+        transition: opacity 0.5s var(--ease), transform 0.7s var(--ease);
+      }
+      .nav__links a:hover {
+        opacity: 0;
+      }
+      .nav__nav.is-open .nav__links a {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .nav__nav.is-open .nav__links a:hover {
+        opacity: 0.55;
+      }
+      .nav__nav.is-open .nav__links li:nth-child(1) a { transition-delay: 0.12s; }
+      .nav__nav.is-open .nav__links li:nth-child(2) a { transition-delay: 0.18s; }
+      .nav__nav.is-open .nav__links li:nth-child(3) a { transition-delay: 0.24s; }
+      .nav__nav.is-open .nav__links li:nth-child(4) a { transition-delay: 0.30s; }
+      .nav__links .rise {
+        animation: none;
+      }
+      .menu__cta {
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity 0.5s var(--ease), transform 0.6s var(--ease), background 0.18s ease;
+      }
+      .nav__nav.is-open .menu__cta {
+        opacity: 1;
+        transform: translateY(0);
+        transition-delay: 0.36s;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        min-height: 560px;
+      }
+      .nav__cta {
+        display: none;
+      }
+      .nav .menu__cta {
+        display: inline-flex;
+        width: 100%;
+        max-width: 340px;
+        padding: 15px 22px;
+        font-size: 15px;
+        border-radius: 11px;
+      }
+      .stage {
+        padding: 16px 18px 22px;
+        gap: 16px;
+      }
+      .headline {
+        font-size: clamp(26px, 7.6vw, 36px);
+        max-width: 13ch;
+        letter-spacing: -0.03em;
+      }
+      .sub {
+        font-size: 14px;
+        line-height: 1.6;
+        max-width: 40ch;
+      }
+      .badge {
+        font-size: 12px;
+        padding: 6px 13px 6px 6px;
+        gap: 10px;
+      }
+      .badge__tag {
+        font-size: 12px;
+        padding: 3px 10px;
+      }
+      .prompt {
+        border-radius: 17px;
+        padding: 16px 14px 12px;
+      }
+      .prompt__input {
+        font-size: 16px;
+        min-height: 62px;
+      }
+      .icon-btn {
+        width: 38px;
+        height: 38px;
+      }
+      .icon-btn--bare {
+        width: 32px;
+      }
+      .icon-btn--send {
+        width: 42px;
+        height: 42px;
+        border-radius: 11px;
+      }
+    }
+
+    @media (max-height: 560px) and (orientation: landscape) {
+      .hero {
+        height: auto;
+        min-height: 100svh;
+      }
+      .stage {
+        padding-block: 34px;
+      }
+      .prompt__input {
+        min-height: 48px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero__bg video {
+        display: none;
+      }
+      .hero__bg, .rise {
+        animation: none !important;
+      }
+      .nav__nav, .nav__nav .nav__links a, .menu__cta, .nav__toggle .bar {
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+      }
+      .nav__nav, .nav__nav .nav__links a, .menu__cta {
+        transform: none !important;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TRADING TERMINAL WORKSPACE STYLING (ORGANIC GLASS ADAPTATION)
+       ═══════════════════════════════════════════════════════════════ */
+    .terminal-section {
+      width: 100%;
+      max-width: var(--shell);
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .ticker-tape-container {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      white-space: nowrap;
+      display: flex;
+    }
+
+    .ticker-tape-track {
+      display: inline-flex;
+      align-items: center;
+      gap: 24px;
+      animation: ticker-roll 30s linear infinite;
+    }
+
+    @keyframes ticker-roll {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ticker-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #16a34a;
+    }
+    .ticker-dot.red {
+      background: #dc2626;
+    }
+
+    .ticker-pill {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .ticker-pill.pos {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+    .ticker-pill.neg {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .terminal-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--card);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .terminal-title-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .terminal-brand {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+
+    .search-input-wrapper input {
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-family: inherit;
+      font-size: 13.5px;
+      color: var(--ink);
+    }
+
+    .wallet-btn-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #141414;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
+    .wallet-btn-nav:hover {
+      background: #000;
+    }
+
+    .rebalance-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #15803d;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
+    .rebalance-action-btn:hover {
+      background: #166534;
+    }
+
+    /* Card Panels */
+    .sentiment-hero-card {
+      background: var(--card);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+    }
+
+    .sentiment-hero-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .sentiment-hero-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pulse-beacon {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #16a34a;
+      box-shadow: 0 0 10px #16a34a;
+    }
+
+    .sentiment-hero-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .sentiment-micro-trickle {
+      font-size: 11.5px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .king-of-the-hill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .sentiment-grid {
+      display: grid;
+      grid-template-columns: 220px 1fr 240px;
+      gap: 24px;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .sentiment-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sentiment-dial-box {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .sentiment-dial-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .sentiment-dial-score {
+      font-size: 40px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      letter-spacing: -0.03em;
+      color: var(--green);
+    }
+
+    .tug-of-war-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .tug-of-war-track {
+      position: relative;
+      width: 100%;
+      height: 14px;
+      background: #fee2e2;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .tug-fill-bull {
+      height: 100%;
+      background: #16a34a;
+      transition: width 0.6s var(--ease);
+    }
+
+    .tug-fill-bear {
+      flex: 1;
+      height: 100%;
+      background: #ef4444;
+    }
+
+    .tug-divider {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #fff;
+    }
+
+    .tug-legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .sentiment-actions-column {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-gamified {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: #fff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
+
+    .btn-gamified.green {
+      background: #15803d;
+      color: #fff;
+      border-color: #15803d;
+    }
+    .btn-gamified.green:hover {
+      background: #166534;
+    }
+
+    /* News cycler */
+    .gamified-news-cycler {
+      background: var(--card);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .news-cycler-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .news-radar-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .active-news-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+    }
+
+    .news-card-source {
+      font-size: 11.5px;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .news-card-headline {
+      font-size: 14.5px;
+      font-weight: 500;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .news-card-headline:hover {
+      text-decoration: underline;
+    }
+
+    .news-impact-tag {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .news-impact-tag.pos {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+    .news-impact-tag.neg {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    /* Table Styles */
+    .table-container {
+      background: var(--card);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 18px;
+      overflow-x: auto;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    }
+
+    .terminal-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+
+    .terminal-table th {
+      padding: 14px 18px;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .terminal-table td {
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+      color: var(--ink);
+    }
+
+    .terminal-table tr:hover {
+      background: rgba(0, 0, 0, 0.015);
+    }
+
+    .stock-symbol-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stock-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    /* Sidebar Drawer & Modals */
+    .sidebar-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 440px;
+      max-width: 100%;
+      background: #fafbf9;
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      transform: translateX(100%);
+      transition: transform 0.4s var(--ease);
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+    }
+    .sidebar-drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(4px);
+      z-index: 90;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease;
+    }
+    .drawer-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(6px);
+      z-index: 110;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-card {
+      background: #fafbf9;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 20px;
+      width: 520px;
+      max-width: 100%;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    }
+
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #141414;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      z-index: 200;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+    .toast-msg.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .scenario-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .scenario-pills-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .scenario-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
+    .pill-btn:hover {
+      background: #fff;
+    }
+    .pill-btn.pill-pos {
+      background: var(--green-bg);
+      color: var(--green);
+      border-color: rgba(22, 163, 74, 0.2);
+    }
+    .pill-btn.pill-neg {
+      background: var(--red-bg);
+      color: var(--red);
+      border-color: rgba(220, 38, 38, 0.2);
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Moving Stock Ticker Tape -->
-  <div class="ticker-tape-container">
-    <div class="ticker-tape-track" id="ticker-tape-track">
-      <span class="ticker-item"><span class="ticker-dot"></span> $NVDAx $182.40 <span class="ticker-pill pos">+4.2%</span></span>
-      <span class="ticker-item"><span class="ticker-dot red"></span> $TSLAx $241.10 <span class="ticker-pill neg">-1.8%</span></span>
-      <span class="ticker-item"><span class="ticker-dot"></span> $AAPLx $230.15 <span class="ticker-pill pos">+0.8%</span></span>
-      <span class="ticker-item"><span class="ticker-dot"></span> $MSFTx $448.20 <span class="ticker-pill pos">+2.1%</span></span>
-      <span class="ticker-item"><span class="ticker-dot red"></span> $GOOGLx $179.90 <span class="ticker-pill neg">-0.4%</span></span>
-      <span class="ticker-item"><span class="ticker-dot"></span> $USDC $1.00 <span class="ticker-pill pos">PEG 1.0</span></span>
-      <span class="ticker-item"><span class="ticker-dot"></span> ⚡ JUPITER v2 ROUTING ACTIVE</span>
+  <!-- ═══════════════════════════════════════════════════════════════
+       ONE FULL-VIEWPORT HERO SECTION: JUNGLEMIND
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="hero" id="home">
+    <div class="hero__bg">
+      <video
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        poster="https://images.higgs.ai/?default=1&amp;output=webp&amp;url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260831_223518_f11bfa03-4e65-47e1-a4a7-30e42a7a8c2f.png&amp;w=1920&amp;q=85">
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260831_232706_43757be4-2250-4f09-8cd7-23aebbf147ad.mp4" type="video/mp4">
+      </video>
     </div>
-  </div>
+
+    <div class="hero__inner">
+      <header class="nav">
+        <!-- Brand Logo -->
+        <a class="brand" href="#home">
+          <svg class="rise" style="--i:0" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <path d="M16 2.5 29.5 16 16 29.5 2.5 16 16 2.5Z" stroke="#141414" stroke-width="1.7" stroke-linejoin="round"/>
+            <path d="M16 9.5 22.5 16 16 22.5 9.5 16 16 9.5Z" fill="#141414"/>
+          </svg>
+          <span class="rise" style="--i:1">JungleMind</span>
+        </a>
+
+        <!-- Menu Navigation (Center Desktop / Drawer Mobile) -->
+        <nav class="nav__nav" id="site-menu" aria-label="Main menu">
+          <ul class="nav__links">
+            <li class="rise" style="--i:2"><a href="#terminal-section">Terminal</a></li>
+            <li class="rise" style="--i:3"><a href="#stocks-table-body">xStocks</a></li>
+            <li class="rise" style="--i:4"><a href="#gamified-news-cycler">Catalysts</a></li>
+            <li class="rise" style="--i:5"><a href="#on-chain-history">Execution</a></li>
+          </ul>
+          <a class="btn-dark menu__cta" href="#terminal-section">Launch Terminal</a>
+        </nav>
+
+        <!-- Desktop Action Button -->
+        <div class="nav__cta rise" style="--i:6">
+          <a class="btn-dark" href="#terminal-section">Launch Terminal</a>
+        </div>
+
+        <!-- Hamburger Toggle Button (≤ 900px) -->
+        <button class="nav__toggle rise" style="--i:6" id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-menu">
+          <span class="nav__toggle-box" aria-hidden="true">
+            <span class="bar bar--top"></span>
+            <span class="bar bar--bot"></span>
+          </span>
+        </button>
+      </header>
+
+      <!-- Center Stage Stack -->
+      <main class="stage">
+        <div class="badge rise" style="--i:8">
+          <span class="badge__tag">Now</span>
+          <span>JungleMind 3.0 is here</span>
+        </div>
+
+        <h1 class="headline rise" style="--i:10">
+          The thinking engine<br class="brk" /> shaped for what counts.
+        </h1>
+
+        <p class="sub rise" style="--i:12">
+          JungleMind is an AI system that reasons through every problem carefully before answering.<br class="brk" />
+          Plug into the API, launch in minutes, and ship reasoning you can really rely on.
+        </p>
+
+        <!-- Prompt Card Form (Frosted Glass) -->
+        <form class="prompt rise" style="--i:14" onsubmit="handlePromptSubmit(event)">
+          <label class="sr-only" for="prompt-input">Ask JungleMind</label>
+          <textarea id="prompt-input" class="prompt__input" rows="3" placeholder="How do macroeconomic catalysts and AI sentiment rebalance tokenized stocks?"></textarea>
+
+          <div class="prompt__bar">
+            <button class="icon-btn rise" style="--i:16" type="button" aria-label="Add attachment" onclick="scrollToTerminal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+            </button>
+
+            <div class="prompt__right">
+              <button class="icon-btn icon-btn--bare rise" style="--i:17" type="button" aria-label="Use microphone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="2.5" width="6" height="11" rx="3"/>
+                  <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>
+                </svg>
+              </button>
+
+              <button class="icon-btn icon-btn--send rise" style="--i:18" type="submit" aria-label="Send message">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 12h15M13 6l6 6-6 6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+  </section>
 
   <!-- ═══════════════════════════════════════════════════════════════
-       MODERN APP-STYLE STARK MONOCHROMATIC BLACK & RED LANDING PAGE
+       TRADING TERMINAL & ON-CHAIN PORTFOLIO SECTION
        ═══════════════════════════════════════════════════════════════ -->
-  <div class="landing-page-modal" id="landing-page-modal">
-    <div class="landing-wrapper">
-      <div class="landing-top-nav">
-        <div class="landing-logo">
-          <span>◉</span> SENTIMENT<span>MATRIX</span> // SOLANA
+  <section class="terminal-section" id="terminal-section">
+    <!-- Moving Stock Ticker Tape -->
+    <div class="ticker-tape-container">
+      <div class="ticker-tape-track" id="ticker-tape-track">
+        <span class="ticker-item"><span class="ticker-dot"></span> $NVDAx $182.40 <span class="ticker-pill pos">+4.2%</span></span>
+        <span class="ticker-item"><span class="ticker-dot red"></span> $TSLAx $241.10 <span class="ticker-pill neg">-1.8%</span></span>
+        <span class="ticker-item"><span class="ticker-dot"></span> $AAPLx $230.15 <span class="ticker-pill pos">+0.8%</span></span>
+        <span class="ticker-item"><span class="ticker-dot"></span> $MSFTx $448.20 <span class="ticker-pill pos">+2.1%</span></span>
+        <span class="ticker-item"><span class="ticker-dot red"></span> $GOOGLx $179.90 <span class="ticker-pill neg">-0.4%</span></span>
+        <span class="ticker-item"><span class="ticker-dot"></span> $USDC $1.00 <span class="ticker-pill pos">PEG 1.0</span></span>
+        <span class="ticker-item"><span class="ticker-dot"></span> ⚡ JUPITER v2 ROUTING ACTIVE</span>
+      </div>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="terminal-nav">
+      <div class="terminal-title-bar">
+        <a href="#home" class="terminal-brand">
+          <svg viewBox="0 0 32 32" fill="none" style="width:20px; height:20px;">
+            <path d="M16 2.5 29.5 16 16 29.5 2.5 16 16 2.5Z" stroke="#141414" stroke-width="1.7"/>
+            <path d="M16 9.5 22.5 16 16 22.5 9.5 16 16 9.5Z" fill="#141414"/>
+          </svg>
+          JungleMind <span style="color:#7e8494; font-weight:400;">Terminal</span>
+        </a>
+        <span>•</span>
+        <span class="updated-tag" id="last-updated-clock" style="font-family:var(--font-mono); font-size:12px; color:var(--muted);">updated --:--:--</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <div class="search-input-wrapper">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-.46 5.28-1.3l5.01 5.01c.39.39 1.02.39 1.41 0 .39-.39.39-1.01.01-1.42zM4 10c0-3.31 2.69-6 6-6s6 2.69 6 6-2.69 6-6 6-6-2.69-6-6z"/></svg>
+          <input type="text" id="filter-input" placeholder="Search ticker or sector..." oninput="applyFilter()">
         </div>
-        <button class="landing-close-btn" onclick="closeLanding()">
-          [ENTER TERMINAL ✕]
+
+        <!-- User Wallet Button -->
+        <button class="wallet-btn-nav" id="wallet-connect-btn" onclick="handleWalletButtonClick()">
+          <span id="wallet-btn-label">Connect Solana Wallet</span>
+        </button>
+
+        <!-- Rebalance Action Trigger -->
+        <button class="rebalance-action-btn" id="rebalance-btn" onclick="initiateRebalanceFlow()">
+          <span>⚡ Auto-Rebalance Basket</span>
         </button>
       </div>
+    </header>
 
-      <div class="landing-hero-showcase">
-        <div class="landing-text-side">
-          <div style="display:inline-block; font-family:var(--font-mono); font-size:0.75rem; color:#ff4444; border:1px solid rgba(255,68,68,0.3); padding:0.25rem 0.6rem; border-radius:4px; margin-bottom:1rem; text-transform:uppercase; letter-spacing:0.1em;">
-            Status: Omniscient Autonomous Monitoring
-          </div>
-          <h1>
-            OMNISCIENT <span class="red-glow">ASCENSION</span>
-          </h1>
-          <p>
-            A high-velocity neural engine scanning real-time news feeds, distilling market sentiment through NLP, and executing non-custodial tokenized equity rebalances on Solana via Jupiter DEX.
-          </p>
-          <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-            <button class="btn-landing-primary" onclick="launchTerminalWithWallet()">
-              Connect Wallet & Trade ↗
-            </button>
-            <button class="btn-landing-secondary" onclick="closeLanding()">
-              Explore Terminal Preview
-            </button>
-          </div>
-        </div>
-
-        <div class="landing-image-side">
-          <img src="assets/xstocks_landing_hero.jpg" alt="Omniscient Matrix Rocket" class="landing-hero-img-element">
-        </div>
-      </div>
-
-      <div class="landing-feature-grid">
-        <div class="landing-feat-card">
-          <h3>Tokenized Equities</h3>
-          <p>Direct exposure to NVDAx, TSLAx, AAPLx, MSFTx, and GOOGLx backed 1:1 on Solana with Token-2022 compatibility.</p>
-        </div>
-        <div class="landing-feat-card">
-          <h3>VADER NLP Engine</h3>
-          <p>Continuously digests Google News RSS to score market euphoria, fear, and institutional sentiment shifts in milliseconds.</p>
-        </div>
-        <div class="landing-feat-card">
-          <h3>Non-Custodial Swaps</h3>
-          <p>Route USDC to tokenized equities in one atomic transaction signed directly by your Phantom or Solflare wallet.</p>
-        </div>
-      </div>
-
-      <div class="landing-cta-box">
-        <div>
-          <div style="font-family:var(--font-mono); font-size:1.1rem; font-weight:800; color:#fff; margin-bottom:0.3rem;">
-            Ready to deploy your sentiment-powered portfolio?
-          </div>
-          <div style="color:#888e9b; font-size:0.85rem;">
-            Zero custodial risk. 100% on-chain transparency. Instant Jupiter routing.
-          </div>
-        </div>
-        <button class="btn-landing-primary" onclick="launchTerminalWithWallet()">
-          Launch Terminal Now ↗
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Top Navigation Header -->
-  <header class="terminal-nav">
-    <div class="terminal-title-bar">
-      <a href="/" class="terminal-brand">
-        <span class="brand-badge">◉</span> Sentiment<span style="color:#7e8494; font-weight:400; margin-left:3px;">Meter</span>
-      </a>
-      <span>•</span>
-      <button style="background:rgba(255,34,34,0.15); border:1px solid rgba(255,34,34,0.4); color:#ff6666; font-size:0.75rem; font-family:var(--font-mono); padding:0.2rem 0.55rem; border-radius:4px; cursor:pointer; font-weight:700;" onclick="openLanding()">
-        🚀 Story & Landing
-      </button>
-      <span>•</span>
-      <span class="updated-tag" id="last-updated-clock">updated --:--:--</span>
-    </div>
-
-    <div style="display:flex; align-items:center; gap:0.75rem;">
-      <div class="search-input-wrapper">
-        <svg width="13" height="13" viewBox="0 0 24 24"><path d="M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-.46 5.28-1.3l5.01 5.01c.39.39 1.02.39 1.41 0 .39-.39.39-1.01.01-1.42zM4 10c0-3.31 2.69-6 6-6s6 2.69 6 6-2.69 6-6 6-6-2.69-6-6z"/></svg>
-        <input type="text" id="filter-input" placeholder="Search ticker or asset..." oninput="applyFilter()">
-      </div>
-
-      <!-- User Wallet Button with Random Handle -->
-      <button class="wallet-btn-nav" id="wallet-connect-btn" onclick="handleWalletButtonClick()">
-        <span class="wallet-avatar-mini" id="wallet-avatar-indicator"></span>
-        <span id="wallet-btn-label">Connect Solana Wallet</span>
-      </button>
-
-      <!-- Rebalance Action Trigger -->
-      <button class="rebalance-action-btn" id="rebalance-btn" onclick="initiateRebalanceFlow()">
-        <span>⚡ Auto-Rebalance Basket</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Terminal Layout -->
-  <main class="terminal-layout">
+<main class="terminal-layout">
 
     <!-- Left: Data Grid & Interactive Controls -->
     <section class="main-view">
@@ -594,7 +1833,64 @@
 
   <div class="toast-msg" id="toast"></div>
 
-  <script src="https://unpkg.com/@solana/web3.js@1.91.4/lib/index.iife.min.js"></script>
+  
+
+  <!-- Toast Notification Container -->
+  <div class="toast-msg" id="toast"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       14. JAVASCRIPT IIFE FOR MENU AND TRADING ENGINE
+       ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    (function() {
+      const toggle = document.getElementById('menu-toggle');
+      const menu = document.getElementById('site-menu');
+      if (!toggle || !menu) return;
+
+      function isOpen() {
+        return toggle.getAttribute('aria-expanded') === 'true';
+      }
+
+      function setMenu(open) {
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        menu.classList.toggle('is-open', open);
+        document.body.classList.toggle('menu-open', open);
+      }
+
+      toggle.addEventListener('click', () => setMenu(!isOpen()));
+
+      const links = menu.querySelectorAll('a');
+      links.forEach(a => {
+        a.addEventListener('click', () => setMenu(false));
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isOpen()) {
+          setMenu(false);
+          toggle.focus();
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 900 && isOpen()) {
+          setMenu(false);
+        }
+      });
+    })();
+
+    function scrollToTerminal() {
+      const term = document.getElementById('terminal-section');
+      if (term) term.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function handlePromptSubmit(e) {
+      e.preventDefault();
+      scrollToTerminal();
+    }
+  </script>
+
+<script src="https://unpkg.com/@solana/web3.js@1.91.4/lib/index.iife.min.js"></script>
   <script>
     const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:8000'

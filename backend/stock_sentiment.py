@@ -40,6 +40,7 @@ def get_all_stock_sentiment(force_refresh: bool = False) -> Dict[str, Any]:
                 "symbol": ticker,
                 "name": info["name"],
                 "category": info["category"],
+                "macro_sector": info.get("macro_sector", info.get("category")),
                 "logo": info.get("logo"),
                 "accent": info.get("accent"),
                 "compound_score": summary.get("avg_compound", 0.0),
