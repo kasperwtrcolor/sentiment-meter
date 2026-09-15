@@ -9,6 +9,90 @@
 </head>
 <body>
 
+  <!-- Moving Stock Ticker Tape -->
+  <div class="ticker-tape-container">
+    <div class="ticker-tape-track" id="ticker-tape-track">
+      <span class="ticker-item"><span class="ticker-dot"></span> $NVDAx $182.40 <span class="ticker-pill pos">+4.2%</span></span>
+      <span class="ticker-item"><span class="ticker-dot red"></span> $TSLAx $241.10 <span class="ticker-pill neg">-1.8%</span></span>
+      <span class="ticker-item"><span class="ticker-dot"></span> $AAPLx $230.15 <span class="ticker-pill pos">+0.8%</span></span>
+      <span class="ticker-item"><span class="ticker-dot"></span> $MSFTx $448.20 <span class="ticker-pill pos">+2.1%</span></span>
+      <span class="ticker-item"><span class="ticker-dot red"></span> $GOOGLx $179.90 <span class="ticker-pill neg">-0.4%</span></span>
+      <span class="ticker-item"><span class="ticker-dot"></span> $USDC $1.00 <span class="ticker-pill pos">PEG 1.0</span></span>
+      <span class="ticker-item"><span class="ticker-dot"></span> ⚡ JUPITER v2 ROUTING ACTIVE</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MODERN APP-STYLE STARK MONOCHROMATIC BLACK & RED LANDING PAGE
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="landing-page-modal" id="landing-page-modal">
+    <div class="landing-wrapper">
+      <div class="landing-top-nav">
+        <div class="landing-logo">
+          <span>◉</span> SENTIMENT<span>MATRIX</span> // SOLANA
+        </div>
+        <button class="landing-close-btn" onclick="closeLanding()">
+          [ENTER TERMINAL ✕]
+        </button>
+      </div>
+
+      <div class="landing-hero-showcase">
+        <div class="landing-text-side">
+          <div style="display:inline-block; font-family:var(--font-mono); font-size:0.75rem; color:#ff4444; border:1px solid rgba(255,68,68,0.3); padding:0.25rem 0.6rem; border-radius:4px; margin-bottom:1rem; text-transform:uppercase; letter-spacing:0.1em;">
+            Status: Omniscient Autonomous Monitoring
+          </div>
+          <h1>
+            OMNISCIENT <span class="red-glow">ASCENSION</span>
+          </h1>
+          <p>
+            A high-velocity neural engine scanning real-time news feeds, distilling market sentiment through NLP, and executing non-custodial tokenized equity rebalances on Solana via Jupiter DEX.
+          </p>
+          <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+            <button class="btn-landing-primary" onclick="launchTerminalWithWallet()">
+              Connect Wallet & Trade ↗
+            </button>
+            <button class="btn-landing-secondary" onclick="closeLanding()">
+              Explore Terminal Preview
+            </button>
+          </div>
+        </div>
+
+        <div class="landing-image-side">
+          <img src="assets/xstocks_landing_hero.jpg" alt="Omniscient Matrix Rocket" class="landing-hero-img-element">
+        </div>
+      </div>
+
+      <div class="landing-feature-grid">
+        <div class="landing-feat-card">
+          <h3>Tokenized Equities</h3>
+          <p>Direct exposure to NVDAx, TSLAx, AAPLx, MSFTx, and GOOGLx backed 1:1 on Solana with Token-2022 compatibility.</p>
+        </div>
+        <div class="landing-feat-card">
+          <h3>VADER NLP Engine</h3>
+          <p>Continuously digests Google News RSS to score market euphoria, fear, and institutional sentiment shifts in milliseconds.</p>
+        </div>
+        <div class="landing-feat-card">
+          <h3>Non-Custodial Swaps</h3>
+          <p>Route USDC to tokenized equities in one atomic transaction signed directly by your Phantom or Solflare wallet.</p>
+        </div>
+      </div>
+
+      <div class="landing-cta-box">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:1.1rem; font-weight:800; color:#fff; margin-bottom:0.3rem;">
+            Ready to deploy your sentiment-powered portfolio?
+          </div>
+          <div style="color:#888e9b; font-size:0.85rem;">
+            Zero custodial risk. 100% on-chain transparency. Instant Jupiter routing.
+          </div>
+        </div>
+        <button class="btn-landing-primary" onclick="launchTerminalWithWallet()">
+          Launch Terminal Now ↗
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Top Navigation Header -->
   <header class="terminal-nav">
     <div class="terminal-title-bar">
@@ -16,9 +100,9 @@
         <span class="brand-badge">◉</span> Sentiment<span style="color:#7e8494; font-weight:400; margin-left:3px;">Meter</span>
       </a>
       <span>•</span>
-      <span style="font-size:0.78rem; color:var(--text-dim); font-family:var(--font-mono); cursor:pointer;" id="landing-toggle-btn" onclick="toggleLanding()">
-        [Toggle Guide]
-      </span>
+      <button style="background:rgba(255,34,34,0.15); border:1px solid rgba(255,34,34,0.4); color:#ff6666; font-size:0.75rem; font-family:var(--font-mono); padding:0.2rem 0.55rem; border-radius:4px; cursor:pointer; font-weight:700;" onclick="openLanding()">
+        🚀 Story & Landing
+      </button>
       <span>•</span>
       <span class="updated-tag" id="last-updated-clock">updated --:--:--</span>
     </div>
@@ -48,27 +132,100 @@
     <!-- Left: Data Grid & Interactive Controls -->
     <section class="main-view">
       
-      <!-- Landing Intro Hero Banner (Collapsible) -->
-      <div class="landing-banner" id="landing-hero-banner">
-        <div class="landing-grid-bg"></div>
-        <div class="landing-content">
-          <div class="landing-left">
-            <h1>Autonomous <span class="glow-green">xStock Rebalancing</span> on Solana</h1>
-            <p>
-              Sentiment Meter evaluates Google News RSS, scores polarity and emotion using NLP, 
-              benchmarks prices via Pyth Hermes, and executes non-custodial swaps between Solana equity tokens and USDC via Jupiter DEX.
-            </p>
-            <div class="landing-features-row">
-              <div class="feat-item"><span class="feat-dot"></span> Google News VADER NLP</div>
-              <div class="feat-item"><span class="feat-dot"></span> Pyth Network Feeds</div>
-              <div class="feat-item"><span class="feat-dot"></span> Jupiter v1 Routing</div>
-              <div class="feat-item"><span class="feat-dot"></span> Client-Side Approval</div>
+      <!-- ═══════════════════════════════════════════════════════════════
+           PROMINENT GAMIFIED SENTIMENT COMMAND CENTER (PUMP.FUN STYLE)
+           ═══════════════════════════════════════════════════════════════ -->
+      <div class="sentiment-hero-card">
+        <div class="sentiment-hero-header">
+          <div class="sentiment-hero-title-group">
+            <span class="pulse-beacon"></span>
+            <span class="sentiment-hero-title">Omniscient Sentiment Radar</span>
+            <span class="sentiment-micro-trickle" id="sentiment-status-tag" style="background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3);">
+              LIVE VOLATILITY: HIGH
+            </span>
+          </div>
+
+          <div class="king-of-the-hill-badge" id="king-badge">
+            <span>👑 KING OF SENTIMENT:</span>
+            <strong id="king-ticker">$NVDA (+84% BULL)</strong>
+          </div>
+        </div>
+
+        <div class="sentiment-grid">
+          <!-- Dial Box with Live Trickling Animation -->
+          <div class="sentiment-dial-box">
+            <div class="sentiment-dial-label">Market Psyche Index</div>
+            <div class="sentiment-dial-score score-trickle-up" id="hero-dial-score">
+              <span id="hero-dial-sign">+</span><span id="hero-dial-val">0.68</span>
+            </div>
+            <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--text-dim);" id="hero-dial-mood">
+              🟢 EUPHORIA / ACCUMULATION
+            </div>
+            <div style="margin-top:0.4rem; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">
+              <span id="trickle-indicator">⚡ TRICKLING: ▲ +0.002</span>
             </div>
           </div>
-          <div>
-            <button class="rebalance-action-btn" id="hero-action-btn" style="padding:0.65rem 1.4rem; font-size:0.88rem;" onclick="handleHeroButtonClick()">
-              <span>Connect Wallet to Trade ↗</span>
+
+          <!-- Tug of War Sentiment Bar -->
+          <div class="sentiment-gauge-center">
+            <div class="tug-of-war-header">
+              <span style="color:#4ade80;">BULL MOMENTUM: <span id="tug-bull-pct">74%</span></span>
+              <span style="color:#f87171;">BEAR FUD: <span id="tug-bear-pct">26%</span></span>
+            </div>
+            <div class="tug-of-war-track">
+              <div class="tug-fill-bull" id="tug-fill-bull" style="width: 74%;"></div>
+              <div class="tug-fill-bear"></div>
+              <div class="tug-divider" id="tug-divider" style="left: 74%;"></div>
+            </div>
+            <div class="tug-legend">
+              <span>Sentiment Weighted Strategy: <strong>xStocks Overweight</strong></span>
+              <span style="color:var(--accent-cyan); font-family:var(--font-mono);">1-Click Rebalance</span>
+            </div>
+          </div>
+
+          <!-- Gamified Action Column -->
+          <div class="sentiment-actions-column">
+            <button class="btn-gamified green" onclick="initiateRebalanceFlow()">
+              <span>⚡ DEGEN REBALANCE</span>
             </button>
+            <button class="btn-gamified" onclick="openDirectSwapModal(selectedTicker)">
+              <span>⇄ SWAP $USDC ↔ $<span id="hero-active-stock">NVDA</span></span>
+            </button>
+            <button class="btn-gamified" onclick="openLanding()" style="border-color:#ff4444; color:#ff6666;">
+              <span>🚀 PROJECT LORE</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           BREAKING NEWS CATALYST DUEL (BUMP & BURST ANIMATIONS)
+           ═══════════════════════════════════════════════════════════════ -->
+      <div class="gamified-news-cycler" id="gamified-news-cycler">
+        <div class="news-cycler-header">
+          <div class="news-radar-tag">
+            <span class="pulse-beacon" style="background:#38bdf8; box-shadow:0 0 10px #38bdf8;"></span>
+            <span>Live RSS Catalyst Radar • Real-Time Sentiment Pulse</span>
+          </div>
+          <div style="font-family:var(--font-mono); color:var(--text-dim); font-size:0.7rem;" id="news-timer-tag">
+            Cycling intel in 3s...
+          </div>
+        </div>
+
+        <div class="news-burst-container" id="news-burst-slot">
+          <div class="active-news-card" id="cycler-card">
+            <div class="news-card-content">
+              <div class="news-card-source" id="cycler-source">
+                <span>Google News Finance</span> • <span id="cycler-stock">$NVDAx</span>
+              </div>
+              <a href="#" target="_blank" class="news-card-headline" id="cycler-headline">
+                Scanning global headlines for tokenized equity signals...
+              </a>
+            </div>
+            <div class="news-impact-tag pos" id="cycler-impact">
+              <span id="cycler-impact-num">+0.68</span>
+              <span style="font-size:0.6rem; font-weight:600;">CATALYST</span>
+            </div>
           </div>
         </div>
       </div>
@@ -451,8 +608,43 @@
     let pendingRebalanceData = null;
     let swapDirection = 'BUY'; // 'BUY' (USDC -> Stock) or 'SELL' (Stock -> USDC)
 
+    // ── Landing Page Modal Controls ──
+    function openLanding() {
+      const modal = document.getElementById('landing-page-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeLanding() {
+      const modal = document.getElementById('landing-page-modal');
+      if (modal) modal.classList.add('hidden');
+      localStorage.setItem('sm_landing_seen', 'true');
+    }
+
+    function toggleLanding() {
+      const modal = document.getElementById('landing-page-modal');
+      if (modal) {
+        if (modal.classList.contains('hidden')) {
+          openLanding();
+        } else {
+          closeLanding();
+        }
+      }
+    }
+
+    function launchTerminalWithWallet() {
+      closeLanding();
+      openWalletModal();
+    }
+
     // ── Initial Boot ──
     window.addEventListener('DOMContentLoaded', async () => {
+      // If user hasn't seen landing, or explicitly clicks, show it
+      if (!connectedWallet && !localStorage.getItem('sm_landing_seen')) {
+        openLanding();
+      } else {
+        closeLanding();
+      }
+
       if (connectedWallet) {
         await fetchWalletUser(connectedWallet);
       } else {
@@ -486,11 +678,226 @@
         renderTable();
         renderInspector(selectedTicker);
         renderHistory();
+        updateTickerTape();
+        updateSentimentCommandCenter();
+        initNewsCycler();
 
         const now = new Date();
         document.getElementById('last-updated-clock').textContent = 'updated ' + now.toTimeString().split(' ')[0];
       } catch (err) {
         console.error("Fetch error:", err);
+      }
+    }
+
+    // ── Moving Ticker Tape Updater ──
+    function updateTickerTape() {
+      const track = document.getElementById('ticker-tape-track');
+      if (!track) return;
+      const positions = (allData.portfolio && allData.portfolio.positions) || {};
+      const symbols = Object.keys(positions).filter(s => s !== 'USDC');
+      if (!symbols.length) return;
+
+      let html = '';
+      symbols.forEach(sym => {
+        const pos = positions[sym];
+        const price = (pos.price_usd || 1.0).toFixed(2);
+        const change = (pos.change_24h_pct || 0).toFixed(1);
+        const isPos = (pos.change_24h_pct || 0) >= 0;
+        html += `
+          <span class="ticker-item" style="cursor:pointer;" onclick="selectedTicker='${sym}'; renderTable(); renderInspector('${sym}');">
+            <span class="ticker-dot ${isPos ? '' : 'red'}"></span>
+            $${sym}x $${price}
+            <span class="ticker-pill ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : ''}${change}%</span>
+          </span>
+        `;
+      });
+      html += `
+        <span class="ticker-item"><span class="ticker-dot"></span> $USDC $1.00 <span class="ticker-pill pos">PEG 1.00</span></span>
+        <span class="ticker-item"><span class="ticker-dot"></span> ⚡ JUPITER v2 DEX ROUTING</span>
+        <span class="ticker-item"><span class="ticker-dot"></span> 🤖 VADER NLP SENTIMENT REBALANCING</span>
+      `;
+      track.innerHTML = html + html;
+    }
+
+    // ── Prominent Sentiment Command Center Engine ──
+    let baseSentimentScore = 0.68;
+    let currentTrickleOffset = 0.0;
+    let trickleInterval = null;
+
+    function updateSentimentCommandCenter() {
+      const sentiments = allData.sentiment_scores || {};
+      const symbols = Object.keys(sentiments);
+      if (!symbols.length) return;
+
+      let totalCompound = 0;
+      let highestBull = { sym: 'NVDA', score: -2 };
+
+      symbols.forEach(sym => {
+        const s = sentiments[sym] || {};
+        const score = s.compound_score !== undefined ? s.compound_score : 0;
+        totalCompound += score;
+        if (score > highestBull.score) {
+          highestBull = { sym, score };
+        }
+      });
+
+      const avgCompound = totalCompound / symbols.length;
+      baseSentimentScore = avgCompound;
+
+      // Update King of the Hill
+      const kingBadge = document.getElementById('king-ticker');
+      if (kingBadge) {
+        const pct = Math.round(((highestBull.score + 1) / 2) * 100);
+        kingBadge.textContent = `$${highestBull.sym} (${pct}% BULL)`;
+      }
+
+      // Update active stock in swap button
+      const activeStockEl = document.getElementById('hero-active-stock');
+      if (activeStockEl) {
+        activeStockEl.textContent = selectedTicker;
+      }
+
+      // Update Tug of War
+      const bullPct = Math.min(88, Math.max(12, Math.round(((avgCompound + 1) / 2) * 100)));
+      const bearPct = 100 - bullPct;
+
+      const bullPctEl = document.getElementById('tug-bull-pct');
+      const bearPctEl = document.getElementById('tug-bear-pct');
+      const fillBullEl = document.getElementById('tug-fill-bull');
+      const dividerEl = document.getElementById('tug-divider');
+
+      if (bullPctEl) bullPctEl.textContent = bullPct + '%';
+      if (bearPctEl) bearPctEl.textContent = bearPct + '%';
+      if (fillBullEl) fillBullEl.style.width = bullPct + '%';
+      if (dividerEl) dividerEl.style.left = bullPct + '%';
+
+      startTrickleAnimation();
+    }
+
+    function startTrickleAnimation() {
+      if (trickleInterval) clearInterval(trickleInterval);
+
+      trickleInterval = setInterval(() => {
+        const delta = (Math.random() - 0.48) * 0.008;
+        currentTrickleOffset = Math.max(-0.035, Math.min(0.035, currentTrickleOffset + delta));
+
+        const liveScore = baseSentimentScore + currentTrickleOffset;
+        const signEl = document.getElementById('hero-dial-sign');
+        const valEl = document.getElementById('hero-dial-val');
+        const dialBox = document.getElementById('hero-dial-score');
+        const moodEl = document.getElementById('hero-dial-mood');
+        const indicatorEl = document.getElementById('trickle-indicator');
+
+        if (!valEl || !signEl) return;
+
+        signEl.textContent = liveScore >= 0 ? '+' : '';
+        valEl.textContent = liveScore.toFixed(3);
+
+        const isTickUp = delta >= 0;
+        if (dialBox) {
+          dialBox.className = 'sentiment-dial-score ' + (isTickUp ? 'score-trickle-up' : 'score-trickle-down');
+        }
+
+        if (indicatorEl) {
+          indicatorEl.innerHTML = isTickUp 
+            ? `<span style="color:#4ade80;">⚡ TRICKLING: ▲ +${Math.abs(delta).toFixed(4)}</span>`
+            : `<span style="color:#f87171;">⚡ TRICKLING: ▼ -${Math.abs(delta).toFixed(4)}</span>`;
+        }
+
+        if (moodEl) {
+          if (liveScore >= 0.35) {
+            moodEl.innerHTML = '<span style="color:#4ade80;">🟢 EUPHORIA // AGGRESSIVE ROTATION</span>';
+          } else if (liveScore >= 0.05) {
+            moodEl.innerHTML = '<span style="color:#86efac;">🟢 MODERATE BULL BIAS // ACCUMULATION</span>';
+          } else if (liveScore >= -0.15) {
+            moodEl.innerHTML = '<span style="color:#e2e8f0;">⚪ NEUTRAL RANGE // DEFENSIVE HOLD</span>';
+          } else {
+            moodEl.innerHTML = '<span style="color:#f87171;">🔴 PANIC FUD // RISK-OFF CASH ROTATION</span>';
+          }
+        }
+      }, 900);
+    }
+
+    // ── Looping News Cycler with Bump & Burst Animations ──
+    let allNewsArticles = [];
+    let currentNewsIndex = 0;
+    let newsCyclerInterval = null;
+
+    function initNewsCycler() {
+      allNewsArticles = [];
+      const sentiments = allData.sentiment_scores || {};
+      
+      for (const [sym, s] of Object.entries(sentiments)) {
+        if (s.articles && s.articles.length > 0) {
+          s.articles.forEach(art => {
+            allNewsArticles.push({
+              symbol: sym,
+              headline: art.headline,
+              source: art.source || 'Google News',
+              url: art.url || `https://news.google.com/search?q=${sym}%20stock`,
+              compound: art.compound !== undefined ? art.compound : (s.compound_score || 0)
+            });
+          });
+        }
+      }
+
+      if (!allNewsArticles.length) {
+        allNewsArticles = [
+          { symbol: 'NVDA', headline: 'NVIDIA AI chip demand expands across tokenized markets and cloud clusters', source: 'Reuters', url: 'https://news.google.com', compound: 0.65 },
+          { symbol: 'TSLA', headline: 'Tesla autonomous fleet expansion accelerates into new territories', source: 'Bloomberg', url: 'https://news.google.com', compound: -0.32 },
+          { symbol: 'MSFT', headline: 'Microsoft Azure enterprise AI adoption breaks multi-quarter records', source: 'CNBC', url: 'https://news.google.com', compound: 0.54 },
+          { symbol: 'AAPL', headline: 'Apple boosts hardware ecosystem with integrated privacy compute models', source: 'WSJ', url: 'https://news.google.com', compound: 0.28 },
+          { symbol: 'GOOGL', headline: 'Alphabet scales Gemini enterprise deployments across Fortune 500', source: 'TechCrunch', url: 'https://news.google.com', compound: 0.44 }
+        ];
+      }
+
+      if (newsCyclerInterval) clearInterval(newsCyclerInterval);
+      
+      displayNewsItem(allNewsArticles[0]);
+
+      newsCyclerInterval = setInterval(() => {
+        currentNewsIndex = (currentNewsIndex + 1) % allNewsArticles.length;
+        bumpToNextNews(allNewsArticles[currentNewsIndex]);
+      }, 3400);
+    }
+
+    function bumpToNextNews(item) {
+      const card = document.getElementById('cycler-card');
+      const cyclerBox = document.getElementById('gamified-news-cycler');
+      if (!card || !cyclerBox) return;
+
+      card.classList.add('bumping-out');
+
+      setTimeout(() => {
+        displayNewsItem(item);
+        card.classList.remove('bumping-out');
+
+        const isPos = item.compound >= 0;
+        cyclerBox.classList.remove('burst-flicker-pos', 'burst-flicker-neg');
+        void cyclerBox.offsetWidth; // Force reflow
+        cyclerBox.classList.add(isPos ? 'burst-flicker-pos' : 'burst-flicker-neg');
+      }, 280);
+    }
+
+    function displayNewsItem(item) {
+      const sourceEl = document.getElementById('cycler-source');
+      const headlineEl = document.getElementById('cycler-headline');
+      const impactEl = document.getElementById('cycler-impact');
+      const impactNumEl = document.getElementById('cycler-impact-num');
+
+      if (!item) return;
+
+      if (sourceEl) {
+        sourceEl.innerHTML = `<span>${item.source}</span> • <strong style="color:#38bdf8;">$${item.symbol}x</strong>`;
+      }
+      if (headlineEl) {
+        headlineEl.textContent = item.headline;
+        headlineEl.href = item.url;
+      }
+      if (impactEl && impactNumEl) {
+        const isPos = item.compound >= 0;
+        impactEl.className = 'news-impact-tag ' + (isPos ? 'pos' : 'neg');
+        impactNumEl.textContent = (isPos ? '+' : '') + item.compound.toFixed(2);
       }
     }
 
@@ -546,6 +953,7 @@
       connectedWallet = addr;
       localStorage.setItem('sm_wallet_address', addr);
       closeWalletModal();
+      closeLanding();
       await fetchWalletUser(addr);
       await loadData();
       showToast(`Wallet connected as ${currentUserProfile ? currentUserProfile.display_name : 'Trader'}!`);
@@ -574,10 +982,7 @@
       const badge = document.getElementById('wallet-badge');
       const heroBtn = document.getElementById('hero-action-btn');
 
-      const landing = document.getElementById('landing-overlay');
-
       if (connectedWallet) {
-        if (landing) landing.classList.add('hidden');
         btn.classList.add('connected');
         const displayName = currentUserProfile ? currentUserProfile.display_name : (connectedWallet.substring(0, 6) + '...');
         label.textContent = displayName;
@@ -587,7 +992,6 @@
           heroBtn.innerHTML = `<span>Connected: ${displayName} ↗</span>`;
         }
       } else {
-        if (landing) landing.classList.remove('hidden');
         btn.classList.remove('connected');
         label.textContent = 'Connect Solana Wallet';
         badge.textContent = 'Guest Trader (Click to Connect)';
@@ -693,6 +1097,8 @@
           selectedTicker = sym;
           renderTable();
           renderInspector(sym);
+          const activeStockEl = document.getElementById('hero-active-stock');
+          if (activeStockEl && sym !== 'USDC') activeStockEl.textContent = sym;
           if (sym !== 'USDC' && !e.target.closest('button')) {
             openDirectSwapModal(sym);
           }
