@@ -1020,11 +1020,14 @@
       try {
         const res = await fetch(`${API_BASE}/api/wallet/profile/${connectedWallet}`);
         const data = await res.json();
-        const user = data.user;
+        const user = data.user || {};
         
-        document.getElementById('prof-handle').textContent = user.display_name;
-        document.getElementById('prof-addr').textContent = user.wallet_address;
-        document.getElementById('prof-total-swaps').textContent = user.total_rebalances;
+        document.getElementById('prof-handle').textContent = user.display_name || 'Trader';
+        document.getElementById('prof-addr').textContent = user.wallet_address || connectedWallet;
+        const totalSwaps = (user.total_rebalances !== undefined && user.total_rebalances !== null && user.total_rebalances > 0)
+          ? user.total_rebalances
+          : (data.history ? data.history.length : 0);
+        document.getElementById('prof-total-swaps').textContent = totalSwaps;
         document.getElementById('prof-total-vol').textContent = '$' + (user.volume_usd || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
         
         const tbody = document.getElementById('prof-history-rows');
@@ -1034,14 +1037,14 @@
             tbody.innerHTML += `
               <tr>
                 <td><strong>${h.from_symbol} → ${h.to_symbol}</strong></td>
-                <td>$${h.amount_usd}</td>
+                <td>$${Number(h.amount_usd || 0).toFixed(2)}</td>
                 <td><a href="https://solscan.io/tx/${h.tx_hash}" target="_blank" style="color:var(--accent-cyan); text-decoration:none;">Solscan ↗</a></td>
               </tr>
             `;
           });
         }
       } catch (e) {
-        console.error(e);
+        console.error("Error opening profile modal:", e);
       }
       document.getElementById('profile-modal').classList.add('open');
     }
@@ -1290,8 +1293,8 @@
         const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com"); // Using public node for broadcasting
         
         if (window.solana && window.solana.isPhantom) {
-          const { signature } = await window.solana.signAndSendTransaction(transaction);
-          txid = signature;
+          const res = await window.solana.signAndSendTransaction(transaction);
+          txid = (res && typeof res === 'object' && res.signature) ? res.signature : (typeof res === 'string' ? res : String(res));
         } else if (window.solflare && window.solflare.isConnected) {
           const signedTx = await window.solflare.signTransaction(transaction);
           txid = await connection.sendRawTransaction(signedTx.serialize());
@@ -1302,20 +1305,27 @@
         btn.textContent = 'Confirming on Solana...';
 
         // 4. Record Swap on Backend
-        await fetch(`${API_BASE}/api/wallet/record-swap`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            wallet_address: connectedWallet,
-            tx_hash: txid,
-            from_symbol: prepData.from_symbol,
-            to_symbol: prepData.to_symbol,
-            amount_usd: prepData.amount_usd
-          })
-        });
+        try {
+          await fetch(`${API_BASE}/api/wallet/record-swap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              wallet_address: connectedWallet,
+              tx_hash: txid,
+              from_symbol: prepData.from_symbol || (swapDirection === 'BUY' ? 'USDC' : selectedTicker),
+              to_symbol: prepData.to_symbol || (swapDirection === 'BUY' ? selectedTicker : 'USDC'),
+              amount_usd: parseFloat(prepData.amount_usd || amt || 0)
+            })
+          });
+        } catch (recErr) {
+          console.error("Error recording swap on backend:", recErr);
+        }
 
         showToast(`⚡ Confirmed! Swapped ${prepData.from_symbol} → ${prepData.to_symbol} ($${amt})`);
         closeDirectSwapModal();
+        if (connectedWallet) {
+          await fetchWalletUser(connectedWallet);
+        }
         await loadData();
 
       } catch (e) {
@@ -1510,8 +1520,8 @@
           const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
           
           if (window.solana && window.solana.isPhantom) {
-            const { signature } = await window.solana.signAndSendTransaction(transaction);
-            txid = signature;
+            const res = await window.solana.signAndSendTransaction(transaction);
+            txid = (res && typeof res === 'object' && res.signature) ? res.signature : (typeof res === 'string' ? res : String(res));
           } else if (window.solflare && window.solflare.isConnected) {
             const signedTx = await window.solflare.signTransaction(transaction);
             txid = await connection.sendRawTransaction(signedTx.serialize());
@@ -1519,22 +1529,29 @@
             throw new Error("No supported wallet connected for signing.");
           }
           
-          await fetch(`${API_BASE}/api/wallet/record-swap`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              wallet_address: connectedWallet,
-              tx_hash: txid,
-              from_symbol: prepData.from_symbol,
-              to_symbol: prepData.to_symbol,
-              amount_usd: prepData.amount_usd
-            })
-          });
+          try {
+            await fetch(`${API_BASE}/api/wallet/record-swap`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                wallet_address: connectedWallet,
+                tx_hash: txid,
+                from_symbol: prepData.from_symbol,
+                to_symbol: prepData.to_symbol,
+                amount_usd: parseFloat(prepData.amount_usd || trade.amount_usd || 0)
+              })
+            });
+          } catch (recErr) {
+            console.error("Error recording basket swap on backend:", recErr);
+          }
           
           executed++;
         }
         
         showToast(`⚡ Confirmed! Executed ${executed} Jupiter swaps.`);
+        if (connectedWallet) {
+          await fetchWalletUser(connectedWallet);
+        }
         await loadData();
       } catch (err) {
         showToast('Execution error: ' + err.message);

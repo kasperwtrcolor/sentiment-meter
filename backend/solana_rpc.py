@@ -86,3 +86,26 @@ def get_wallet_token_balances(wallet_address: str) -> Dict[str, float]:
         
     _balance_cache[wallet_address] = (results, time.time())
     return results
+
+def get_recent_onchain_signatures(wallet_address: str, limit: int = 5):
+    """Fetches recent finalized transaction signatures for this wallet via Solana RPC."""
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getSignaturesForAddress",
+        "params": [wallet_address, {"limit": limit}]
+    }
+    try:
+        req = urllib.request.Request(
+            RPC_URL,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            if "result" in data:
+                return [s for s in data["result"] if not s.get("err")]
+    except Exception as e:
+        print(f"Error fetching onchain signatures for {wallet_address}: {e}")
+    return []
+
